@@ -1,0 +1,12 @@
+[package]
+name = "rust_utils"
+version = "0.0.0"
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1"
+syn = "1.0"
+
