@@ -1,7 +1,9 @@
-use proc_macro::{Literal, TokenStream};
+use proc_macro::TokenStream;
+use proc_macro2::{Literal};
 use quote::quote;
-use syn::{Data, DeriveInput, Ident, parse_macro_input, Token};
+use syn::{Data, DeriveInput, Ident, parenthesized, parse_macro_input, Token, token, Type, TypePath};
 use syn::parse::{Parse, ParseStream};
+use syn::token::Token;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -45,26 +47,43 @@ pub fn enum_variant_associate_derive(input: TokenStream) -> TokenStream {
                 .map(|a| &a.tokens).next()
                 .expect(&format!("No value on variant {}", variant.ident))
                 .clone();
-
+            let value = syn::parse2::<ValueContent>(attr).expect("Could not parse");
         }
     }
     res.into()
 }
 
+struct ValueContent {
+    paren_token: token::Paren,
+    value: Value,
+}
+
+impl Parse for ValueContent {
+    fn parse(input: ParseStream) -> syn::Result<Self> {
+        let content;
+        Ok(ValueContent {
+            paren_token: parenthesized!(content in input),
+            value: content.parse().expect("value parse err"),
+        })
+    }
+}
+
 struct Value {
     ident: Ident,
+    colon: Token!(:),
+    type_name: TypePath,
     equals: Token!(=),
     value: Literal,
-    comma: Option<Token![,]>,
 }
 
 impl Parse for Value {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Value{
             ident: input.parse()?,
+            colon: input.parse()?,
+            type_name: input.parse()?,
             equals: input.parse()?,
             value: input.parse()?,
-            comma: input.parse()?,
         })
     }
 }
