@@ -1,15 +1,11 @@
 extern crate core;
 
 use proc_macro::TokenStream;
-use std::collections::HashMap;
-use std::env::var;
-
 use proc_macro2::Literal;
 use quote::quote;
-use syn::{Data, DataEnum, DeriveInput, Ident, parenthesized, parse_macro_input, Token, token, Type, TypePath};
+use syn::{Data, DataEnum, DeriveInput, Ident, parenthesized, parse_macro_input, Token, token, TypePath};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::token::Token;
 
 fn get_enum_data(input: &DeriveInput) -> &DataEnum {
     if let Data::Enum(data_enum) = &input.data {
@@ -114,7 +110,7 @@ pub fn enum_variant_associate_derive(input: TokenStream) -> TokenStream {
         }
 
         functions.extend(quote! {
-            pub fn #field_name(&self) -> #type_name {
+            pub const fn #field_name(&self) -> #type_name {
                 match self {
                     #match_statement
                 }
@@ -160,7 +156,7 @@ struct FieldAttributes {
 
 #[derive(Debug)]
 struct AttributeContent {
-    paren_token: token::Paren,
+    _paren_token: token::Paren,
     values: Punctuated<Value, Token![,]>,
 }
 
@@ -168,7 +164,7 @@ impl Parse for AttributeContent {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         let content;
         Ok(AttributeContent {
-            paren_token: parenthesized!(content in input),
+            _paren_token: parenthesized!(content in input),
             values: content.parse_terminated(Value::parse)?,
         })
     }
@@ -177,9 +173,9 @@ impl Parse for AttributeContent {
 #[derive(Debug)]
 struct Value {
     ident: Ident,
-    colon: Token!(:),
+    _colon: Token!(:),
     type_name: TypePath,
-    equals: Token!(=),
+    _equals: Token!(=),
     value: Literal,
 }
 
@@ -187,9 +183,9 @@ impl Parse for Value {
     fn parse(input: ParseStream) -> syn::Result<Self> {
         Ok(Value {
             ident: input.parse()?,
-            colon: input.parse()?,
+            _colon: input.parse()?,
             type_name: input.parse()?,
-            equals: input.parse()?,
+            _equals: input.parse()?,
             value: input.parse()?,
         })
     }
