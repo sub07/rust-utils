@@ -1,13 +1,5 @@
-[package]
-name = "rust_utils"
-version = "1.1.0"
-edition = "2021"
-
-[lib]
-proc-macro = true
-
-[dependencies]
-quote = "1"
-proc-macro2 = "1.0"
-syn = { version = "1.0", features = ["full", "extra-traits"] }
-
+[workspace]
+members = [
+    "rust-utils",
+    "rust-utils-macro",
+]
