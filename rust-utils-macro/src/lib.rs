@@ -172,7 +172,7 @@ pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
         let force_copy = !field.attrs.is_empty();
 
         let (type_name, fn_body) = match TypeKind::from_type(type_name) {
-            TypeKind::Primitive => (quote!(#type_name), quote!(self.#ident)),
+            TypeKind::Primitive | TypeKind::PrimitiveTuple => (quote!(#type_name), quote!(self.#ident)),
             TypeKind::String => (quote!(&str), quote!(&self.#ident)),
             TypeKind::Other => (
                 if force_copy { quote!(#type_name) } else { quote!(&#type_name) },
