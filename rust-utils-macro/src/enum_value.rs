@@ -14,7 +14,7 @@ pub fn get_nb_field(attributes_content: &[FieldAttributes]) -> usize {
         panic!("Must have the same number of fields in all values");
     }
 
-    let nb_field = *values_length.iter().next().unwrap();
+    let nb_field = *values_length.first().unwrap();
     nb_field
 }
 

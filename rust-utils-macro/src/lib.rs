@@ -49,8 +49,8 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
             FieldAttributes {
                 variant_ident: v.ident.clone(),
                 attribute_content: syn::parse2::<AttributeContent>(
-                    v.attrs.iter().next()
-                        .expect(&format!("Illegal variant without value attribute : {}", v.ident))
+                    v.attrs.first()
+                        .unwrap_or_else(|| panic!("Illegal variant without value attribute : {}", v.ident))
                         .tokens.clone()
                 ).expect("Invalid syntax in #[value(...)] : "),
             }
