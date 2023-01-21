@@ -1,19 +1,13 @@
-extern crate core;
-
 use proc_macro::TokenStream;
-use proc_macro2::Literal;
-use quote::quote;
-use syn::{Data, DataEnum, DeriveInput, Ident, parenthesized, parse_macro_input, Token, token, TypePath};
-use syn::parse::{Parse, ParseStream};
-use syn::punctuated::Punctuated;
 
-fn get_enum_data(input: &DeriveInput) -> &DataEnum {
-    if let Data::Enum(data_enum) = &input.data {
-        data_enum
-    } else {
-        panic!("Must be applied on enum")
-    }
-}
+use quote::quote;
+use syn::{DeriveInput, parse_macro_input};
+
+use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
+use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, TypeKind};
+
+mod utils;
+mod enum_value;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -45,23 +39,22 @@ pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
 }
 
 #[proc_macro_derive(EnumValue, attributes(value))]
-pub fn enum_variant_associate_derive(input: TokenStream) -> TokenStream {
+pub fn enum_value_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let enum_data = get_enum_data(&input);
     let enum_name = &input.ident;
-    let attributes_content =
-        enum_data
-            .variants.iter()
-            .map(|v|
-                FieldAttributes {
-                    variant_ident: v.ident.clone(),
-                    attribute_content: syn::parse2::<AttributeContent>(
-                        v.attrs.iter().next()
-                            .expect(&format!("Illegal variant without value attribute : {}", v.ident))
-                            .tokens.clone()
-                    ).expect("Invalid syntax in #[value(...)] : "),
-                }
-            ).collect::<Vec<_>>();
+    let attributes_content = enum_data
+        .variants.iter()
+        .map(|v|
+            FieldAttributes {
+                variant_ident: v.ident.clone(),
+                attribute_content: syn::parse2::<AttributeContent>(
+                    v.attrs.iter().next()
+                        .expect(&format!("Illegal variant without value attribute : {}", v.ident))
+                        .tokens.clone()
+                ).expect("Invalid syntax in #[value(...)] : "),
+            }
+        ).collect::<Vec<_>>();
 
     let nb_field = get_nb_field(&attributes_content);
 
@@ -127,66 +120,77 @@ pub fn enum_variant_associate_derive(input: TokenStream) -> TokenStream {
     impl_block.into()
 }
 
-fn all_equals<T: Eq>(idents: &[T]) -> bool {
-    let first = idents.iter().next();
-    idents.iter().fold(first, |acc, ident| {
-        acc.and_then(|acc| if acc == ident { Some(acc) } else { None })
-    }).is_some()
-}
+#[proc_macro_derive(New)]
+pub fn struct_new_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let struct_data = get_struct_data(&input);
 
-fn get_nb_field(attributes_content: &[FieldAttributes]) -> usize {
-    let values_length = attributes_content.iter().map(|attr| attr.attribute_content.values.len()).collect::<Vec<_>>();
-
-    if values_length.is_empty() {
-        panic!("No field in value");
+    if is_struct_tuple(struct_data) {
+        panic!("Tuple structs are not supported");
     }
 
-    if values_length.iter().max() != values_length.iter().min() { // All values are equals
-        panic!("Must have the same number of fields in all values");
+    let struct_name = &input.ident;
+
+    let mut new_fn_params = quote!();
+    let mut struct_creation_fields = quote!();
+    for field in &struct_data.fields {
+        let ident = &field.ident.as_ref().unwrap();
+        let type_name = &field.ty;
+        new_fn_params.extend(quote!(#ident: #type_name,));
+        struct_creation_fields.extend(quote!(#ident,));
     }
 
-    let nb_field = *values_length.iter().next().unwrap();
-    nb_field
+    let res = quote! {
+        impl #struct_name {
+            pub fn new(#new_fn_params) -> #struct_name {
+                #struct_name {
+                    #struct_creation_fields
+                }
+            }
+        }
+    };
+
+    res.into()
 }
 
-struct FieldAttributes {
-    variant_ident: Ident,
-    attribute_content: AttributeContent,
-}
+#[proc_macro_derive(Getter, attributes(getter_copy))]
+pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let struct_data = get_struct_data(&input);
 
-#[derive(Debug)]
-struct AttributeContent {
-    _paren_token: token::Paren,
-    values: Punctuated<Value, Token![,]>,
-}
+    if is_struct_tuple(struct_data) {
+        panic!("Tuple structs are not supported");
+    }
 
-impl Parse for AttributeContent {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        let content;
-        Ok(AttributeContent {
-            _paren_token: parenthesized!(content in input),
-            values: content.parse_terminated(Value::parse)?,
+    let struct_name = &input.ident;
+
+    let mut getters_fn = quote!();
+
+    for field in &struct_data.fields {
+        let ident = &field.ident.as_ref().unwrap();
+        let type_name = &field.ty;
+        let force_copy = !field.attrs.is_empty();
+
+        let (type_name, fn_body) = match TypeKind::from_type(type_name) {
+            TypeKind::Primitive => (quote!(#type_name), quote!(self.#ident)),
+            TypeKind::String => (quote!(&str), quote!(&self.#ident)),
+            TypeKind::Other => (
+                if force_copy { quote!(#type_name) } else { quote!(&#type_name) },
+                if force_copy { quote!(self.#ident) } else { quote!(&self.#ident) }
+            ),
+        };
+        getters_fn.extend(quote! {
+            pub fn #ident(&self) -> #type_name {
+                #fn_body
+            }
         })
     }
-}
 
-#[derive(Debug)]
-struct Value {
-    ident: Ident,
-    _colon: Token!(:),
-    type_name: TypePath,
-    _equals: Token!(=),
-    value: Literal,
-}
+    let res = quote! {
+        impl #struct_name {
+            #getters_fn
+        }
+    };
 
-impl Parse for Value {
-    fn parse(input: ParseStream) -> syn::Result<Self> {
-        Ok(Value {
-            ident: input.parse()?,
-            _colon: input.parse()?,
-            type_name: input.parse()?,
-            _equals: input.parse()?,
-            value: input.parse()?,
-        })
-    }
+    res.into()
 }
