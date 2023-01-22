@@ -5,12 +5,12 @@ struct T;
 
 #[derive(New, Debug)]
 struct Test {
-    f1: u64,
+    #[new_default] f1: u64,
     f2: String,
     f3: T,
 }
 
 fn main() {
-    let test = Test::new(5, "test".into(), T::new());
-    println!("{:?}", test);
+    let test = Test::new("test".into(), T::new());
+    dbg!(test);
 }

@@ -124,7 +124,7 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
     impl_block.into()
 }
 
-#[proc_macro_derive(New)]
+#[proc_macro_derive(New, attributes(new_default))]
 pub fn struct_new_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_data = get_struct_data(&input);
@@ -140,8 +140,15 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
     for field in &struct_data.fields {
         let ident = &field.ident.as_ref().unwrap();
         let type_name = &field.ty;
-        new_fn_params.extend(quote!(#ident: #type_name,));
-        struct_creation_fields.extend(quote!(#ident,));
+
+        let is_default = !field.attrs.is_empty();
+
+        if !is_default {
+            new_fn_params.extend(quote!(#ident: #type_name,));
+            struct_creation_fields.extend(quote!(#ident,));
+        } else {
+            struct_creation_fields.extend(quote!(#ident: Default::default(),));
+        }
     }
 
     let res = quote! {
