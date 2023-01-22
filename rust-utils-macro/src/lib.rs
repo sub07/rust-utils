@@ -2,6 +2,7 @@ use proc_macro::TokenStream;
 
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
+use crate::enum_str::get_snake_case_from_pascal_case;
 
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
 use crate::struct_getter::StructGetterAttrib;
@@ -10,6 +11,7 @@ use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, 
 mod utils;
 mod enum_value;
 mod struct_getter;
+mod enum_str;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -197,6 +199,42 @@ pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
     let res = quote! {
         impl #struct_name {
             #getters_fn
+        }
+    };
+
+    res.into()
+}
+
+#[proc_macro_derive(EnumStr)]
+pub fn enum_str_derive(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+    let enum_data = get_enum_data(&input);
+    let enum_name = &input.ident;
+
+    let mut match_elems = quote!();
+    let mut match_elems_snake_case = quote!();
+
+    for variant in &enum_data.variants {
+        let ident = &variant.ident;
+        let ident_str = ident.to_string();
+        match_elems.extend(quote!(#enum_name::#ident => #ident_str,));
+        let snake_case = get_snake_case_from_pascal_case(&ident_str);
+        match_elems_snake_case.extend(quote!(#enum_name::#ident => #snake_case,));
+    }
+
+    let res = quote! {
+        impl #enum_name {
+            fn as_str(&self) -> &'static str {
+                match self {
+                    #match_elems
+                }
+            }
+
+            fn as_str_snakecase(&self) -> &'static str {
+                match self {
+                    #match_elems_snake_case
+                }
+            }
         }
     };
 
