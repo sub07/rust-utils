@@ -4,10 +4,12 @@ use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
 
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
+use crate::struct_getter::StructGetterAttrib;
 use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, TypeKind};
 
 mod utils;
 mod enum_value;
+mod struct_getter;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -153,7 +155,7 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
     res.into()
 }
 
-#[proc_macro_derive(Getter, attributes(getter_copy))]
+#[proc_macro_derive(Getter, attributes(getter_force_copy, no_getter))]
 pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
     let struct_data = get_struct_data(&input);
@@ -169,14 +171,20 @@ pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
     for field in &struct_data.fields {
         let ident = &field.ident.as_ref().unwrap();
         let type_name = &field.ty;
-        let force_copy = !field.attrs.is_empty();
+        let attribs = field.attrs.iter()
+            .filter_map(|attr| StructGetterAttrib::try_from_attrib_path(&attr.path))
+            .collect::<Vec<_>>();
+
+        if attribs.iter().any(|attr| *attr == StructGetterAttrib::NoGetter) { continue; }
+
+        let force_copy = attribs.iter().any(|attr| *attr == StructGetterAttrib::GetterForceCopy);
 
         let (type_name, fn_body) = match TypeKind::from_type(type_name) {
             TypeKind::Primitive | TypeKind::PrimitiveTuple => (quote!(#type_name), quote!(self.#ident)),
             TypeKind::String => (quote!(&str), quote!(&self.#ident)),
             TypeKind::Other => (
                 if force_copy { quote!(#type_name) } else { quote!(&#type_name) },
-                if force_copy { quote!(self.#ident) } else { quote!(&self.#ident) }
+                if force_copy { quote!(self.#ident) } else { quote!(&self.#ident) },
             ),
         };
         getters_fn.extend(quote! {
