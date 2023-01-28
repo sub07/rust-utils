@@ -6,12 +6,14 @@ use crate::enum_str::get_snake_case_from_pascal_case;
 
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
 use crate::struct_getter::StructGetterAttrib;
+use crate::struct_new::StructNewAttrib;
 use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, TypeKind};
 
 mod utils;
 mod enum_value;
 mod struct_getter;
 mod enum_str;
+mod struct_new;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -141,9 +143,13 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
         let ident = &field.ident.as_ref().unwrap();
         let type_name = &field.ty;
 
-        let is_default = !field.attrs.is_empty();
+        let attribs = field.attrs.iter()
+            .filter_map(|attr| StructNewAttrib::try_from_attrib_path(&attr.path))
+            .collect::<Vec<_>>();
 
-        if !is_default {
+        let is_new_default_attrib_present = attribs.iter().any(|attr| *attr == StructNewAttrib::NewDefault);
+
+        if !is_new_default_attrib_present {
             new_fn_params.extend(quote!(#ident: #type_name,));
             struct_creation_fields.extend(quote!(#ident,));
         } else {
