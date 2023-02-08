@@ -1,4 +1,4 @@
-trait Number: Copy + Clone + PartialOrd + PartialEq {}
+pub trait Number: Copy + Clone + PartialOrd + PartialEq {}
 
 macro_rules! impl_primitive {
     ($($ty:path)*) => {
