@@ -18,6 +18,13 @@ struct PatternsView {
     pub width: i32,
 }
 
+#[derive(New)]
+struct Test<T> {
+    f3: i32,
+    f1: T,
+    f2: i32,
+}
+
 fn main() {
     // let test = Test::new("test".into(), T::new());
     // dbg!(test);

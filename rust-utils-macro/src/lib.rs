@@ -2,8 +2,8 @@ use proc_macro::TokenStream;
 
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
-use crate::enum_str::get_snake_case_from_pascal_case;
 
+use crate::enum_str::get_snake_case_from_pascal_case;
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
 use crate::struct_getter::StructGetterAttrib;
 use crate::struct_new::StructNewAttrib;
@@ -157,11 +157,24 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let res = quote! {
-        impl #struct_name {
-            pub fn new(#new_fn_params) -> #struct_name {
-                #struct_name {
-                    #struct_creation_fields
+    let res = if input.generics.params.is_empty() {
+        quote! {
+            impl #struct_name {
+                pub fn new(#new_fn_params) -> #struct_name {
+                    #struct_name {
+                        #struct_creation_fields
+                    }
+                }
+            }
+        }
+    } else {
+        let generics = &input.generics;
+        quote! {
+            impl #generics #struct_name #generics {
+                pub fn new(#new_fn_params) -> #struct_name #generics {
+                    #struct_name {
+                        #struct_creation_fields
+                    }
                 }
             }
         }
