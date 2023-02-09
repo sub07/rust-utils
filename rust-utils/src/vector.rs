@@ -1,29 +1,49 @@
+use std::ops::{Index, IndexMut};
 use crate::number::Number;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
 
 impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
-    pub fn from(values: [T; SIZE]) -> Vector<T, SIZE> {
+    pub const fn from(values: [T; SIZE]) -> Vector<T, SIZE> {
         Vector(values)
     }
-
-    pub fn as_slice(&self) -> &[T; SIZE] {
+    pub const fn as_slice(&self) -> &[T; SIZE] {
         &self.0
     }
+    pub const fn size(&self) -> usize { SIZE }
 }
 
 impl <T: Number> Vector<T, 2> {
-    pub fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
-    pub fn x(&self) -> T { self.0[0] }
-    pub fn y(&self) -> T { self.0[1] }
+    pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
+    pub fn x(&self) -> T { self[0] }
+    pub fn y(&self) -> T { self[1] }
+    pub fn set_x(&mut self, new_x: T) { self[0] = new_x }
+    pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
 impl <T: Number> Vector<T, 3> {
-    pub fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
-    pub fn x(&self) -> T { self.0[0] }
-    pub fn y(&self) -> T { self.0[1] }
-    pub fn z(&self) -> T { self.0[2] }
+    pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
+    pub fn x(&self) -> T { self[0] }
+    pub fn y(&self) -> T { self[1] }
+    pub fn z(&self) -> T { self[2] }
+    pub fn set_x(&mut self, new_x: T) { self[0] = new_x; }
+    pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
+    pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
+}
+
+impl <T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.0[index]
+    }
+}
+
+impl <T: Number, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.0[index]
+    }
 }
 
 macro_rules! enable_multiple_args {
