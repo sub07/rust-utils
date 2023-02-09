@@ -1,6 +1,6 @@
 use crate::number::Number;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
 
 impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
