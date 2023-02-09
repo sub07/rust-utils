@@ -1,6 +1,6 @@
 use crate::number::Number;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
 
 impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
@@ -14,11 +14,13 @@ impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
 }
 
 impl <T: Number> Vector<T, 2> {
+    pub fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
     pub fn x(&self) -> T { self.0[0] }
     pub fn y(&self) -> T { self.0[1] }
 }
 
 impl <T: Number> Vector<T, 3> {
+    pub fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
     pub fn x(&self) -> T { self.0[0] }
     pub fn y(&self) -> T { self.0[1] }
     pub fn z(&self) -> T { self.0[2] }
