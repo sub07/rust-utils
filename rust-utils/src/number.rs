@@ -1,4 +1,15 @@
-pub trait Number: Copy + Clone + PartialOrd + PartialEq {}
+use std::ops::{Add, Div, Mul, Sub};
+
+pub trait Number:
+Copy +
+Clone +
+PartialOrd +
+PartialEq +
+Add<Self, Output=Self> +
+Sub<Self, Output=Self> +
+Mul<Self, Output=Self> +
+Div<Self, Output=Self> +
+{}
 
 macro_rules! impl_primitive {
     ($($ty:path)*) => {
