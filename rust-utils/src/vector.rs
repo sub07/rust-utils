@@ -1,5 +1,4 @@
 use crate::number::Number;
-use std::ops::{Add, Sub, Mul, Div};
 
 #[derive(Debug)]
 pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
@@ -10,27 +9,20 @@ impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
     }
 }
 
-// macro_rules! impl_vec_op {
-//     ($trait_name:ident,$fn_name:ident,$op:expr) => {
-//         impl <T: Number, const SIZE: usize> $trait_name<Vector<T, SIZE>> for Vector<T, SIZE> {
-//             type Output = Vector<T, SIZE>;
-//
-//             fn $fn_name(self, rhs: Vector<T, SIZE>) -> Self::Output {
-//                 Vector(self.0.zip(rhs.0).map($op))
-//             }
-//         }
-//     }
-// }
+macro_rules! impl_vec_op {
+    (+, )
+    ($trait_name:ident, $fn_name:ident, $impl_ty:ty, $rhs_ty:ty, $output_ty:ty, $($fn_body:tt)+) => {
+        impl <T: Number, const SIZE: usize> std::ops::$trait_name<$rhs_ty> for $impl_ty {
+            type Output = $output_ty;
 
-impl<T: Number, const SIZE: usize> Add<Vector<T, SIZE>> for Vector<T, SIZE> {
-    type Output = Vector<T, SIZE>;
-
-    fn add(self, rhs: Vector<T, SIZE>) -> Self::Output {
-        Vector(self.0.zip(rhs.0).map(|(l, r)| l + r))
-    }
+            fn $fn_name(self, rhs: Vector<T, SIZE>) -> Self::Output {
+                $($fn_body)+
+            }
+        }
+    };
 }
 
-// impl_vec_op!(Add, add, |(l, r)| l + r);
+impl_vec_op!(Add, add, Vector<T, SIZE>, Vector<T, SIZE>, Vector<T, SIZE>, Vector(self.0.zip(rhs.0).map(|(left, right)| left + right)));
 // impl_vec_op!(Sub, sub, |(l, r)| l - r);
 // impl_vec_op!(Mul, mul, |(l, r)| l * r);
 // impl_vec_op!(Div, div, |(l, r)| l / r);
