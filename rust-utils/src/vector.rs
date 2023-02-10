@@ -6,9 +6,11 @@ use crate::number::{DefaultConst, Number};
 pub struct Vector<T: Number + ~const DefaultConst, const SIZE: usize>([T; SIZE]);
 
 impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
+    pub const ZERO: Vector<T, SIZE> = Vector::zeros();
     pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
     pub const fn size(&self) -> usize { SIZE }
     pub const fn default_const() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
+    pub const fn zeros() -> Vector<T, SIZE> { Vector::default_const() }
     pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
 }
 
