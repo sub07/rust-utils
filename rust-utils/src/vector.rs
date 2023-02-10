@@ -1,18 +1,18 @@
 use std::ops::{Index, IndexMut};
 
-use crate::number::Number;
+use crate::number::{DefaultConst, Number};
 
 #[derive(Debug, Clone, Copy)]
-pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
+pub struct Vector<T: Number + ~const DefaultConst, const SIZE: usize>([T; SIZE]);
 
-impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
-    pub const fn as_slice(&self) -> &[T; SIZE] {
-        &self.0
-    }
+impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
+    pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
     pub const fn size(&self) -> usize { SIZE }
+    pub const fn zeros() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
+    pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
 }
 
-impl<T: Number> Vector<T, 2> {
+impl<T: Number + ~const DefaultConst> Vector<T, 2> {
     pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
@@ -20,13 +20,13 @@ impl<T: Number> Vector<T, 2> {
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
-impl<T: Number, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
+impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
     fn from(values: [T; SIZE]) -> Self {
         Vector(values)
     }
 }
 
-impl<T: Number> Vector<T, 3> {
+impl<T: Number + ~const DefaultConst> Vector<T, 3> {
     pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
