@@ -8,8 +8,14 @@ pub struct Vector<T: Number + ~const DefaultConst, const SIZE: usize>([T; SIZE])
 impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
     pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
     pub const fn size(&self) -> usize { SIZE }
-    pub const fn default() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
+    pub const fn default_const() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
     pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
+}
+
+impl <T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
+    fn default() -> Self {
+        Vector::default_const()
+    }
 }
 
 impl<T: Number + ~const DefaultConst> Vector<T, 2> {
