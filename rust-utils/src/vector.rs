@@ -1,4 +1,4 @@
-use std::ops::{Deref, Index, IndexMut};
+use std::ops::{Index, IndexMut};
 
 use crate::number::{DefaultConst, Number};
 
@@ -45,6 +45,16 @@ impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<[T; SIZE]> f
     }
 }
 
+impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<&[T; SIZE]> for Vector<T, SIZE> {
+    fn from(values: &[T; SIZE]) -> Self {
+        Vector(*values)
+    }
+}
+
+impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<&Vector<T, SIZE>> for Vector<T, SIZE> {
+    fn from(value: &Vector<T, SIZE>) -> Self { *value }
+}
+
 impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
     type Output = T;
 
@@ -65,6 +75,17 @@ macro_rules! enable_multiple_args {
         $macro_name!($op);
         enable_multiple_args!($macro_name, $($other)*);
     };
+}
+
+macro_rules! parse_op {
+    (assign, +=, $macro_name:ident) => ($macro_name!(+, AddAssign, add_assign););
+    (assign, -=, $macro_name:ident) => ($macro_name!(-, SubAssign, sub_assign););
+    (assign, *=, $macro_name:ident) => ($macro_name!(*, MulAssign, mul_assign););
+    (assign, /=, $macro_name:ident) => ($macro_name!(/, DivAssign, div_assign););
+    (+, $macro_name:ident) => ($macro_name!(+, Add, add););
+    (-, $macro_name:ident) => ($macro_name!(-, Sub, sub););
+    (*, $macro_name:ident) => ($macro_name!(*, Mul, mul););
+    (/, $macro_name:ident) => ($macro_name!(/, Div, div););
 }
 
 macro_rules! emit_vec_binary_op_impl {
@@ -114,14 +135,27 @@ macro_rules! impl_vec_op_num {
     };
 }
 
+macro_rules! impl_vec_op_slice {
+    ($op:tt) => (parse_op!($op, impl_vec_op_slice););
+    ($op:tt, $trait_name:ident, $fn_name:ident) => {
+        impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, [T; SIZE]);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, [T; SIZE]);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &[T; SIZE]);
+    };
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
+        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { l $op Vector::from(r) });
+    };
+}
+
 macro_rules! impl_vec_op_assign_vec {
     ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_vec););
     ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>, Vector<T, SIZE>);
-        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>, &Vector<T, SIZE>);
+        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>);
+        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>);
     };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty1, r: $ty2| { for i in 0..SIZE { l.0[i] = l.0[i] $op r.0[i]; } });
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l.0[i] = l.0[i] $op r.0[i]; } });
     };
 }
 
@@ -130,23 +164,27 @@ macro_rules! impl_vec_op_assign_num {
     ($op:tt, $trait_name:ident, $fn_name:ident) => {
         impl_vec_op_assign_num!($op, $trait_name, $fn_name, Vector<T, SIZE>);
     };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty1, r: T| { for i in 0..SIZE { l.0[i] = l.0[i] $op r; } });
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty, r: T| { for i in 0..SIZE { l.0[i] = l.0[i] $op r; } });
     };
 }
 
-macro_rules! parse_op {
-    (assign, +=, $macro_name:ident) => ($macro_name!(+, AddAssign, add_assign););
-    (assign, -=, $macro_name:ident) => ($macro_name!(-, SubAssign, sub_assign););
-    (assign, *=, $macro_name:ident) => ($macro_name!(*, MulAssign, mul_assign););
-    (assign, /=, $macro_name:ident) => ($macro_name!(/, DivAssign, div_assign););
-    (+, $macro_name:ident) => ($macro_name!(+, Add, add););
-    (-, $macro_name:ident) => ($macro_name!(-, Sub, sub););
-    (*, $macro_name:ident) => ($macro_name!(*, Mul, mul););
-    (/, $macro_name:ident) => ($macro_name!(/, Div, div););
+macro_rules! impl_vec_op_assign_slice {
+    ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_slice););
+    ($op:tt, $trait_name:ident, $fn_name:ident) => {
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE]);
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, &[T; SIZE]);
+    };
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l.0[i] = l.0[i] $op r[i]; } });
+    };
 }
+
 
 enable_multiple_args!(impl_vec_op_vec, + - * /);
 enable_multiple_args!(impl_vec_op_num, + - * /);
+enable_multiple_args!(impl_vec_op_slice, + - * /);
+
 enable_multiple_args!(impl_vec_op_assign_vec, += -= *= /=);
 enable_multiple_args!(impl_vec_op_assign_num, += -= *= /=);
+enable_multiple_args!(impl_vec_op_assign_slice, += -= *= /=);

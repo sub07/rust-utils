@@ -19,5 +19,20 @@ fn main() {
     dbg!(x, y);
     dbg!(&pos1);
     pos1 /= TEST;
+
+    let pos2 = Vector::from([5.6, 9.8]);
+
+    dbg!(pos1 + [2.2, 3.3]);
+    dbg!(pos1 - [2.2, 3.3]);
+    dbg!(pos1 * [2.2, 3.3]);
+    dbg!(pos1 / [2.2, 3.3]);
+
+    pos1 += [2.2, 3.3];
+    pos1 -= [2.1, 3.3];
+    pos1 *= [2.2, 3.3];
+    pos1 /= [2.1, 3.3];
+
+    pos1 += TEST;
+    pos1 += &pos2;
     dbg!(&pos1);
 }
