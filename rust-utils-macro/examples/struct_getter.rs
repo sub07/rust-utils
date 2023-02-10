@@ -16,4 +16,6 @@ fn main() {
     dbg!(test.f1());
     dbg!(test.f2());
     dbg!(test.f3());
+    // dbg!(test.f4());
+    dbg!(test.f4);
 }

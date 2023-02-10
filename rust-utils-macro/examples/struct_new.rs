@@ -5,9 +5,10 @@ use rust_utils_macro::{New};
 #[derive(Debug, New)]
 struct T;
 
-#[derive(New)]
-struct PatternsView {
-    pub model: Rc<RefCell<T>>,
+#[allow(dead_code)]
+#[derive(New, Debug)]
+struct Test {
+    pub gen: Rc<RefCell<T>>,
     #[new_default]
     pub x_offset: i32,
     #[new_default]
@@ -18,14 +19,7 @@ struct PatternsView {
     pub width: i32,
 }
 
-#[derive(New)]
-struct Test<T> {
-    f3: i32,
-    f1: T,
-    f2: i32,
-}
-
 fn main() {
-    // let test = Test::new("test".into(), T::new());
-    // dbg!(test);
+    let test = Test::new(Rc::new(RefCell::new(T)), 5, 6);
+    dbg!(test);
 }
