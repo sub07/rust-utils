@@ -1,20 +1,18 @@
 use std::ops::{Index, IndexMut};
+
 use crate::number::Number;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<T: Number, const SIZE: usize>([T; SIZE]);
 
 impl<T: Number, const SIZE: usize> Vector<T, SIZE> {
-    pub const fn from(values: [T; SIZE]) -> Vector<T, SIZE> {
-        Vector(values)
-    }
     pub const fn as_slice(&self) -> &[T; SIZE] {
         &self.0
     }
     pub const fn size(&self) -> usize { SIZE }
 }
 
-impl <T: Number> Vector<T, 2> {
+impl<T: Number> Vector<T, 2> {
     pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
@@ -22,7 +20,13 @@ impl <T: Number> Vector<T, 2> {
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
-impl <T: Number> Vector<T, 3> {
+impl<T: Number, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
+    fn from(values: [T; SIZE]) -> Self {
+        Vector(values)
+    }
+}
+
+impl<T: Number> Vector<T, 3> {
     pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
@@ -32,7 +36,7 @@ impl <T: Number> Vector<T, 3> {
     pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
 }
 
-impl <T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
+impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
     type Output = T;
 
     fn index(&self, index: usize) -> &Self::Output {
@@ -40,7 +44,7 @@ impl <T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
     }
 }
 
-impl <T: Number, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
+impl<T: Number, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
         &mut self.0[index]
     }
