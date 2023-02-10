@@ -1,6 +1,6 @@
 use rust_utils::number::Number;
 
-fn f<N: Number>(n: N) -> impl Number {
+fn f<N: Number>(_: N) -> impl Number {
     5
 }
 
