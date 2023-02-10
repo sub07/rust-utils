@@ -1,4 +1,4 @@
-use std::ops::{Index, IndexMut};
+use std::ops::{Deref, Index, IndexMut};
 
 use crate::number::{DefaultConst, Number};
 
@@ -8,6 +8,7 @@ pub struct Vector<T: Number + ~const DefaultConst, const SIZE: usize>([T; SIZE])
 impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
     pub const ZERO: Vector<T, SIZE> = Vector::zeros();
     pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
+    pub fn as_slice_mut(&mut self) -> &mut [T; SIZE] { &mut self.0 }
     pub const fn size(&self) -> usize { SIZE }
     pub const fn default_const() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
     pub const fn zeros() -> Vector<T, SIZE> { Vector::default_const() }
@@ -28,12 +29,6 @@ impl<T: Number + ~const DefaultConst> Vector<T, 2> {
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
-impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
-    fn from(values: [T; SIZE]) -> Self {
-        Vector(values)
-    }
-}
-
 impl<T: Number + ~const DefaultConst> Vector<T, 3> {
     pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
     pub fn x(&self) -> T { self[0] }
@@ -42,6 +37,12 @@ impl<T: Number + ~const DefaultConst> Vector<T, 3> {
     pub fn set_x(&mut self, new_x: T) { self[0] = new_x; }
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
     pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
+}
+
+impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
+    fn from(values: [T; SIZE]) -> Self {
+        Vector(values)
+    }
 }
 
 impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {

@@ -18,7 +18,6 @@ fn main() {
     let [x, y] = pos1.as_slice();
     dbg!(x, y);
     dbg!(&pos1);
-    // pos1 *= &pos2;
     pos1 /= TEST;
     dbg!(&pos1);
 }
