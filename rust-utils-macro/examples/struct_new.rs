@@ -21,7 +21,7 @@ struct Test {
 
 #[derive(New, Debug)]
 struct TGenerics<T, G> {
-    t: T,
+    t: Rc<T>,
     i: i8,
     g: G,
 }
