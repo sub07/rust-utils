@@ -13,13 +13,21 @@ struct Test {
     pub x_offset: i32,
     #[new_default]
     pub y_offset: i32,
-    // In glyph unit
+    // Comment
     pub height: i32,
-    // In glyph unit
+    // Comment
     pub width: i32,
 }
 
+#[derive(New, Debug)]
+struct TGenerics<T> {
+    t: T,
+    i: i8,
+}
+
 fn main() {
-    let test = Test::new(Rc::new(RefCell::new(T)), 5, 6);
-    dbg!(test);
+    let test = Test::new(Rc::new(RefCell::new(T)), 5, 6,);
+    dbg!(&test);
+    let gen = TGenerics::<Test>::new(test, 8);
+    dbg!(gen);
 }

@@ -1,4 +1,5 @@
-use proc_macro::TokenStream;
+use proc_macro::{TokenStream};
+use proc_macro2::Span;
 
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
@@ -157,25 +158,50 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let res = if input.generics.params.is_empty() {
-        quote! {
-            impl #struct_name {
-                pub fn new(#new_fn_params) -> #struct_name {
-                    #struct_name {
-                        #struct_creation_fields
-                    }
-                }
-            }
+    let non_default_fields = struct_data.fields.iter()
+        .filter(|f| f.ident.is_some())
+        .map(|f| (f, f.attrs.iter().map(|attr| StructNewAttrib::try_from_attrib_path(&attr.path)).collect::<Vec<_>>()))
+        .filter(|(_, attrs)| {
+            attrs.is_empty() || !attrs.iter().any(|attr| *attr == Some(StructNewAttrib::NewDefault))
+        })
+        .map(|(f, _)| f)
+        .collect::<Vec<_>>();
+
+    let default_fields = struct_data.fields.iter()
+        .filter(|f| !non_default_fields.contains(f))
+        .collect::<Vec<_>>();
+
+    let default_field_names = default_fields.iter().map(|f| f.ident.as_ref().unwrap()).collect::<Vec<_>>();
+
+    let field_names = non_default_fields.iter().map(|f| f.ident.as_ref().unwrap()).collect::<Vec<_>>();
+    let field_types = non_default_fields.iter().map(|f| &f.ty).collect::<Vec<_>>();
+    let aliases = field_types.iter().enumerate().map(|(i, _)| {
+        let text = format!("T{i}");
+        syn::Ident::new(&text, Span::call_site())
+    }).collect::<Vec<_>>();
+
+    let new_generics = quote! {
+        <#(#aliases: Into<#field_types>),*>
+    };
+
+    let new_fn_param = quote! {
+        #(#field_names: #aliases),*
+    };
+
+    let struct_creation = quote! {
+        #struct_name {
+            #(#field_names: #field_names . into(),)*
+            #(#default_field_names: Default::default(),)*
         }
-    } else {
-        let generics = &input.generics;
-        quote! {
-            impl #generics #struct_name #generics {
-                pub fn new(#new_fn_params) -> #struct_name #generics {
-                    #struct_name {
-                        #struct_creation_fields
-                    }
-                }
+    };
+
+    // dbg!(struct_creation.to_string());
+
+    let generics = &input.generics;
+    let res = quote! {
+        impl #generics #struct_name #generics {
+            pub fn new #new_generics (#new_fn_param) -> #struct_name #generics {
+                #struct_creation
             }
         }
     };

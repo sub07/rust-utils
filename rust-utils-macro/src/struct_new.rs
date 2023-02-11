@@ -1,6 +1,6 @@
 use syn::{Path};
 
-#[derive(PartialEq, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum StructNewAttrib {
     NewDefault,
 }
