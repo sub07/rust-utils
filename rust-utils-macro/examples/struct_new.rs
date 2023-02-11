@@ -3,12 +3,12 @@ use std::rc::Rc;
 use rust_utils_macro::{New};
 
 #[derive(Debug, New)]
-struct T;
+struct S;
 
 #[allow(dead_code)]
 #[derive(New, Debug)]
 struct Test {
-    pub gen: Rc<RefCell<T>>,
+    pub gen: Rc<RefCell<S>>,
     #[new_default]
     pub x_offset: i32,
     #[new_default]
@@ -20,14 +20,15 @@ struct Test {
 }
 
 #[derive(New, Debug)]
-struct TGenerics<T> {
+struct TGenerics<T, G> {
     t: T,
     i: i8,
+    g: G,
 }
 
 fn main() {
-    let test = Test::new(Rc::new(RefCell::new(T)), 5, 6,);
+    let test = Test::new(Rc::new(RefCell::new(S)), 5, 6,);
     dbg!(&test);
-    let gen = TGenerics::<Test>::new(test, 8);
+    let gen = TGenerics::new(test, 8, 6);
     dbg!(gen);
 }

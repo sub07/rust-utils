@@ -1,6 +1,6 @@
-use proc_macro::{TokenStream};
-use proc_macro2::Span;
+use proc_macro::TokenStream;
 
+use proc_macro2::Span;
 use quote::quote;
 use syn::{DeriveInput, parse_macro_input};
 
@@ -8,7 +8,7 @@ use crate::enum_str::get_snake_case_from_pascal_case;
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
 use crate::struct_getter::StructGetterAttrib;
 use crate::struct_new::StructNewAttrib;
-use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, TypeKind};
+use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, is_type_generic, TypeKind};
 
 mod utils;
 mod enum_value;
@@ -140,7 +140,8 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
 
     let mut new_fn_params = quote!();
     let mut struct_creation_fields = quote!();
-    for field in &struct_data.fields {
+    let mut fn_new_generics = quote!();
+    for (i, field) in struct_data.fields.iter().enumerate() {
         let ident = &field.ident.as_ref().unwrap();
         let type_name = &field.ty;
 
@@ -150,58 +151,26 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
 
         let is_new_default_attrib_present = attribs.iter().any(|attr| *attr == StructNewAttrib::NewDefault);
 
-        if !is_new_default_attrib_present {
+        if is_new_default_attrib_present {
+            struct_creation_fields.extend(quote!(#ident: Default::default(),));
+        } else if is_type_generic(&input.generics, &field.ty) {
             new_fn_params.extend(quote!(#ident: #type_name,));
             struct_creation_fields.extend(quote!(#ident,));
         } else {
-            struct_creation_fields.extend(quote!(#ident: Default::default(),));
+            let gen_ident = syn::Ident::new(&format!("T{i}"), Span::call_site());
+            new_fn_params.extend(quote!(#ident: #gen_ident,));
+            struct_creation_fields.extend(quote!(#ident: #ident.into(),));
+            fn_new_generics.extend(quote!(#gen_ident: Into<#type_name>,));
         }
     }
-
-    let non_default_fields = struct_data.fields.iter()
-        .filter(|f| f.ident.is_some())
-        .map(|f| (f, f.attrs.iter().map(|attr| StructNewAttrib::try_from_attrib_path(&attr.path)).collect::<Vec<_>>()))
-        .filter(|(_, attrs)| {
-            attrs.is_empty() || !attrs.iter().any(|attr| *attr == Some(StructNewAttrib::NewDefault))
-        })
-        .map(|(f, _)| f)
-        .collect::<Vec<_>>();
-
-    let default_fields = struct_data.fields.iter()
-        .filter(|f| !non_default_fields.contains(f))
-        .collect::<Vec<_>>();
-
-    let default_field_names = default_fields.iter().map(|f| f.ident.as_ref().unwrap()).collect::<Vec<_>>();
-
-    let field_names = non_default_fields.iter().map(|f| f.ident.as_ref().unwrap()).collect::<Vec<_>>();
-    let field_types = non_default_fields.iter().map(|f| &f.ty).collect::<Vec<_>>();
-    let aliases = field_types.iter().enumerate().map(|(i, _)| {
-        let text = format!("T{i}");
-        syn::Ident::new(&text, Span::call_site())
-    }).collect::<Vec<_>>();
-
-    let new_generics = quote! {
-        <#(#aliases: Into<#field_types>),*>
-    };
-
-    let new_fn_param = quote! {
-        #(#field_names: #aliases),*
-    };
-
-    let struct_creation = quote! {
-        #struct_name {
-            #(#field_names: #field_names . into(),)*
-            #(#default_field_names: Default::default(),)*
-        }
-    };
-
-    // dbg!(struct_creation.to_string());
 
     let generics = &input.generics;
     let res = quote! {
         impl #generics #struct_name #generics {
-            pub fn new #new_generics (#new_fn_param) -> #struct_name #generics {
-                #struct_creation
+            pub fn new<#fn_new_generics>(#new_fn_params) -> #struct_name #generics {
+                #struct_name {
+                    #struct_creation_fields
+                }
             }
         }
     };

@@ -1,4 +1,5 @@
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Type, TypeTuple};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, Generics, Type, TypePath, TypeTuple};
+use syn::Type::Path;
 
 pub fn get_enum_data(input: &DeriveInput) -> &DataEnum {
     if let Data::Enum(data_enum) = &input.data {
@@ -55,5 +56,13 @@ impl TypeKind {
             Type::Tuple(tuple) if is_primitive_tuple(tuple) => TypeKind::PrimitiveTuple,
             _ => TypeKind::Other,
         }
+    }
+}
+
+pub fn is_type_generic(generics: &Generics, ty: &Type) -> bool {
+    if let Path(TypePath { path, .. }) = &ty {
+        generics.type_params().map(|tp| &tp.ident).any(|g| path.is_ident(g))
+    } else {
+        false
     }
 }
