@@ -16,9 +16,7 @@ impl<T: Number + ~ const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
 }
 
 impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
-    fn default() -> Self {
-        Vector::default_const()
-    }
+    fn default() -> Self { Vector::default_const() }
 }
 
 impl<T: Number + ~ const DefaultConst> Vector<T, 2> {
@@ -40,15 +38,11 @@ impl<T: Number + ~ const DefaultConst> Vector<T, 3> {
 }
 
 impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
-    fn from(values: [T; SIZE]) -> Self {
-        Vector(values)
-    }
+    fn from(values: [T; SIZE]) -> Self { Vector(values) }
 }
 
 impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&[T; SIZE]> for Vector<T, SIZE> {
-    fn from(values: &[T; SIZE]) -> Self {
-        Vector(*values)
-    }
+    fn from(values: &[T; SIZE]) -> Self { Vector(*values) }
 }
 
 impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&Vector<T, SIZE>> for Vector<T, SIZE> {
@@ -62,22 +56,18 @@ impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<T> for Vect
 impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
     type Output = T;
 
-    fn index(&self, index: usize) -> &Self::Output {
-        &self.0[index]
-    }
+    fn index(&self, index: usize) -> &Self::Output { &self.0[index] }
 }
 
 impl<T: Number, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.0[index]
-    }
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output { &mut self.0[index] }
 }
 
 macro_rules! enable_multiple_args {
     ($macro_name:ident,) => ();
-    ($macro_name:ident, $op:tt $($other:tt)*) => {
-        $macro_name!($op);
-        enable_multiple_args!($macro_name, $($other)*);
+    ($macro_name:ident, $arg:tt $($args:tt)*) => {
+        $macro_name!($arg);
+        enable_multiple_args!($macro_name, $($args)*);
     };
 }
 
@@ -98,7 +88,7 @@ macro_rules! emit_vec_binary_op_impl {
             type Output = $output_ty;
 
             fn $fn_name(self, rhs: $rhs_ty) -> Self::Output {
-                |$left:$impl_ty, $right:$rhs_ty| -> $output_ty { $fn_body }(self, rhs)
+                (|$left:$impl_ty, $right:$rhs_ty| -> $output_ty { $fn_body })(self, rhs)
             }
         }
     };
@@ -109,7 +99,7 @@ macro_rules! emit_vec_assign_op_impl {
         impl <T: Number, const SIZE: usize> std::ops::$trait_name<$rhs_ty> for $impl_ty {
             #[allow(clippy::redundant_closure_call)]
             fn $fn_name(&mut self, rhs: $rhs_ty) {
-                (|$left:&mut $impl_ty, $right:$rhs_ty| { $fn_body })(self, rhs)
+                (|$left:&mut $impl_ty, $right:$rhs_ty| $fn_body)(self, rhs)
             }
         }
     };
@@ -194,11 +184,33 @@ macro_rules! impl_vec_op_assign_slice {
     };
 }
 
+macro_rules! impl_num_op_vec {
+    ($ty:ty) => {
+        impl_num_op_vec!($ty, Add, add);
+        impl_num_op_vec!($ty, Sub, sub);
+        impl_num_op_vec!($ty, Mul, mul);
+        impl_num_op_vec!($ty, Div, div);
+    };
+    ($ty:ty, $trait_name:ident, $fn_name:ident) => {
+        impl <const SIZE: usize> std::ops::$trait_name<Vector<$ty, SIZE>> for $ty {
+            type Output = Vector<$ty, SIZE>;
+
+            fn $fn_name(self, rhs: Vector<$ty, SIZE>) -> Self::Output {
+                let mut res :[$ty; SIZE] = [Default::default(); SIZE];
+                for i in 0..SIZE {
+                    res[i] = std::ops::$trait_name::$fn_name(self, rhs[i]);
+                }
+                res.into()
+            }
+        }
+    }
+}
 
 enable_multiple_args!(impl_vec_op_vec, + - * /);
 enable_multiple_args!(impl_vec_op_num, + - * /);
-enable_multiple_args!(impl_vec_op_slice, + - * /);
+enable_multiple_args!(impl_num_op_vec, i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64);
 
+enable_multiple_args!(impl_vec_op_slice, + - * /);
 enable_multiple_args!(impl_vec_op_assign_vec, += -= *= /=);
 enable_multiple_args!(impl_vec_op_assign_num, += -= *= /=);
 enable_multiple_args!(impl_vec_op_assign_slice, += -= *= /=);

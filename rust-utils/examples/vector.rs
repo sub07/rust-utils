@@ -45,4 +45,9 @@ fn main() {
     vec_slice *= test;
     vec_slice /= test;
     dbg!(vec_slice);
+
+    dbg!(1.0 + pos1);
+    dbg!(1.0 - pos1);
+    dbg!(1.0 * pos1);
+    dbg!(1.0 / pos1);
 }
