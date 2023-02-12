@@ -35,4 +35,14 @@ fn main() {
     pos1 += TEST;
     pos1 += &pos2;
     dbg!(&pos1);
+
+    let test = [2.1, 5.6] + pos1;
+    dbg!(test);
+
+    let mut vec_slice = [5.0, 6.0];
+    vec_slice += test;
+    vec_slice -= test;
+    vec_slice *= test;
+    vec_slice /= test;
+    dbg!(vec_slice);
 }

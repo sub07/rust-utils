@@ -3,9 +3,9 @@ use std::ops::{Index, IndexMut};
 use crate::number::{DefaultConst, Number};
 
 #[derive(Debug, Clone, Copy)]
-pub struct Vector<T: Number + ~const DefaultConst, const SIZE: usize>([T; SIZE]);
+pub struct Vector<T: Number + ~ const DefaultConst, const SIZE: usize>([T; SIZE]);
 
-impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
+impl<T: Number + ~ const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
     pub const ZERO: Vector<T, SIZE> = Vector::zeros();
     pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
     pub fn as_slice_mut(&mut self) -> &mut [T; SIZE] { &mut self.0 }
@@ -15,13 +15,13 @@ impl<T: Number + ~const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
     pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
 }
 
-impl <T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
+impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
     fn default() -> Self {
         Vector::default_const()
     }
 }
 
-impl<T: Number + ~const DefaultConst> Vector<T, 2> {
+impl<T: Number + ~ const DefaultConst> Vector<T, 2> {
     pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
@@ -29,7 +29,7 @@ impl<T: Number + ~const DefaultConst> Vector<T, 2> {
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
-impl<T: Number + ~const DefaultConst> Vector<T, 3> {
+impl<T: Number + ~ const DefaultConst> Vector<T, 3> {
     pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
@@ -39,20 +39,24 @@ impl<T: Number + ~const DefaultConst> Vector<T, 3> {
     pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
 }
 
-impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
+impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
     fn from(values: [T; SIZE]) -> Self {
         Vector(values)
     }
 }
 
-impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<&[T; SIZE]> for Vector<T, SIZE> {
+impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&[T; SIZE]> for Vector<T, SIZE> {
     fn from(values: &[T; SIZE]) -> Self {
         Vector(*values)
     }
 }
 
-impl<T: Number + ~const DefaultConst, const SIZE: usize> const From<&Vector<T, SIZE>> for Vector<T, SIZE> {
+impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&Vector<T, SIZE>> for Vector<T, SIZE> {
     fn from(value: &Vector<T, SIZE>) -> Self { *value }
+}
+
+impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<T> for Vector<T, SIZE> {
+    fn from(value: T) -> Self { Vector::init_with(value) }
 }
 
 impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
@@ -142,9 +146,14 @@ macro_rules! impl_vec_op_slice {
         impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, [T; SIZE]);
         impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
         impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &[T; SIZE]);
+
+        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] ,Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] ,&Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE],Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE],&Vector<T, SIZE>);
     };
     ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { l $op Vector::from(r) });
+        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector::from(l) $op Vector::from(r) });
     };
 }
 
@@ -155,7 +164,7 @@ macro_rules! impl_vec_op_assign_vec {
         impl_vec_op_assign_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>);
     };
     ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l.0[i] = l.0[i] $op r.0[i]; } });
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l[i] = l[i] $op r[i]; } });
     };
 }
 
@@ -165,18 +174,21 @@ macro_rules! impl_vec_op_assign_num {
         impl_vec_op_assign_num!($op, $trait_name, $fn_name, Vector<T, SIZE>);
     };
     ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty, r: T| { for i in 0..SIZE { l.0[i] = l.0[i] $op r; } });
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty, r: T| { for i in 0..SIZE { l[i] = l[i] $op r; } });
     };
 }
 
 macro_rules! impl_vec_op_assign_slice {
     ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_slice););
     ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE]);
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, &[T; SIZE]);
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, [T; SIZE]);
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
+
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE], Vector<T, SIZE>);
+        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE], &Vector<T, SIZE>);
     };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l.0[i] = l.0[i] $op r[i]; } });
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
+        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty1, r: $ty2| { for i in 0..SIZE { l[i] = l[i] $op r[i]; } });
     };
 }
 
