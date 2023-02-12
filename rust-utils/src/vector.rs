@@ -124,6 +124,7 @@ macro_rules! impl_vec_op_vec {
         impl_vec_op_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &Vector<T, SIZE>);
     };
     ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
+        // TODO Maybe dont use zip then map to avoid temp array creation
         emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector(l.0.zip(r.0).map(|(l, r)| l $op r)) });
     };
 }
@@ -131,11 +132,12 @@ macro_rules! impl_vec_op_vec {
 macro_rules! impl_vec_op_num {
     ($op:tt) => (parse_op!($op, impl_vec_op_num););
     ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_num!($op, $trait_name, $fn_name, Vector<T, SIZE>);
-        impl_vec_op_num!($op, $trait_name, $fn_name, &Vector<T, SIZE>);
+        impl_vec_op_num!($op, $trait_name, $fn_name, Vector<T, SIZE>, T);
+        impl_vec_op_num!($op, $trait_name, $fn_name, &Vector<T, SIZE>, T);
     };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty, r: T| -> Vector<T, SIZE> { Vector(l.0.map(|v| v $op r)) });
+    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
+        // TODO Vec from create temp vector of the same value that coulmd be avoided
+        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector::from(l) + Vector::from(r) });
     };
 }
 
@@ -147,10 +149,10 @@ macro_rules! impl_vec_op_slice {
         impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
         impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &[T; SIZE]);
 
-        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] ,Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] ,&Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE],Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE],&Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] , Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] , &Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE], Vector<T, SIZE>);
+        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE], &Vector<T, SIZE>);
     };
     ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
         emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector::from(l) $op Vector::from(r) });
