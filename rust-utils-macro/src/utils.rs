@@ -1,5 +1,6 @@
-use syn::{Data, DataEnum, DataStruct, DeriveInput, Generics, Type, TypePath, TypeTuple};
-use syn::Type::Path;
+use proc_macro2::TokenStream;
+use quote::{quote, ToTokens};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, GenericParam, Generics, Path, Type, TypePath, TypeTuple};
 
 pub fn get_enum_data(input: &DeriveInput) -> &DataEnum {
     if let Data::Enum(data_enum) = &input.data {
@@ -28,41 +29,32 @@ pub fn all_equals<T: Eq>(idents: &[T]) -> bool {
     }).is_some()
 }
 
-pub enum TypeKind {
-    Primitive,
-    PrimitiveTuple,
-    String,
-    Other,
-}
-
-const PRIMITIVES: [&str; 16] = ["i8", "i16", "i32", "i64", "i128", "isize", "u8", "u16", "u32", "u64", "u128", "usize", "f32", "f64", "char", "bool"];
-
-
-fn is_primitive_tuple(tuple_type: &TypeTuple) -> bool {
-    tuple_type.elems.iter().all(|ty| {
-        match ty {
-            Type::Tuple(tuple) => is_primitive_tuple(tuple),
-            Type::Path(ty) => PRIMITIVES.iter().any(|p| ty.path.segments.last().unwrap().ident == *p),
-            _ => panic!("I forgot a kind of type"),
-        }
-    })
-}
-
-impl TypeKind {
-    pub fn from_type(ty: &Type) -> TypeKind {
-        match ty {
-            Type::Path(ty) if ty.path.segments.last().unwrap().ident == "String" => TypeKind::String,
-            Type::Path(ty) if PRIMITIVES.iter().any(|p| ty.path.segments.last().unwrap().ident == *p) => TypeKind::Primitive,
-            Type::Tuple(tuple) if is_primitive_tuple(tuple) => TypeKind::PrimitiveTuple,
-            _ => TypeKind::Other,
-        }
-    }
-}
-
 pub fn is_type_generic(generics: &Generics, ty: &Type) -> bool {
-    if let Path(TypePath { path, .. }) = &ty {
+    if let Type::Path(TypePath { path, .. }) = &ty {
         generics.type_params().map(|tp| &tp.ident).any(|g| path.is_ident(g))
     } else {
         false
+    }
+}
+
+pub fn get_generics_types_from_declared(declared_generics: &Generics) -> TokenStream {
+    let generics_idents = declared_generics.params.iter().map(|p| {
+        match p {
+            GenericParam::Type(t) => {
+                t.ident.to_token_stream()
+            }
+            GenericParam::Lifetime(l) => {
+                l.to_token_stream()
+            }
+            GenericParam::Const(c) => {
+                c.ident.to_token_stream()
+            }
+        }
+    }).collect::<Vec<_>>();
+
+    if generics_idents.is_empty() {
+        quote!()
+    } else {
+        quote!(<#(#generics_idents),*>)
     }
 }

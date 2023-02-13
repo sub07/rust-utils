@@ -1,18 +1,16 @@
 use proc_macro::TokenStream;
 
 use proc_macro2::Span;
-use quote::quote;
-use syn::{DeriveInput, parse_macro_input};
+use quote::{quote, ToTokens};
+use syn::{DeriveInput, GenericParam, parse_macro_input};
 
 use crate::enum_str::get_snake_case_from_pascal_case;
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
-use crate::struct_getter::StructGetterAttrib;
 use crate::struct_new::StructNewAttrib;
-use crate::utils::{all_equals, get_enum_data, get_struct_data, is_struct_tuple, is_type_generic, TypeKind};
+use crate::utils::{all_equals, get_enum_data, get_generics_types_from_declared, get_struct_data, is_struct_tuple, is_type_generic};
 
 mod utils;
 mod enum_value;
-mod struct_getter;
 mod enum_str;
 mod struct_new;
 
@@ -164,62 +162,16 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
         }
     }
 
-    let generics = &input.generics;
+    let declared_generics = &input.generics;
+    let generics_idents = get_generics_types_from_declared(declared_generics);
+
     let res = quote! {
-        impl #generics #struct_name #generics {
-            pub fn new<#fn_new_generics>(#new_fn_params) -> #struct_name #generics {
+        impl #declared_generics #struct_name #generics_idents {
+            pub fn new<#fn_new_generics>(#new_fn_params) -> #struct_name #generics_idents {
                 #struct_name {
                     #struct_creation_fields
                 }
             }
-        }
-    };
-
-    res.into()
-}
-
-#[proc_macro_derive(Getter, attributes(getter_force_copy, no_getter))]
-pub fn struct_getter_derive(input: TokenStream) -> TokenStream {
-    let input = parse_macro_input!(input as DeriveInput);
-    let struct_data = get_struct_data(&input);
-
-    if is_struct_tuple(struct_data) {
-        panic!("Tuple structs are not supported");
-    }
-
-    let struct_name = &input.ident;
-
-    let mut getters_fn = quote!();
-
-    for field in &struct_data.fields {
-        let ident = &field.ident.as_ref().unwrap();
-        let type_name = &field.ty;
-        let attribs = field.attrs.iter()
-            .filter_map(|attr| StructGetterAttrib::try_from_attrib_path(&attr.path))
-            .collect::<Vec<_>>();
-
-        if attribs.iter().any(|attr| *attr == StructGetterAttrib::NoGetter) { continue; }
-
-        let force_copy = attribs.iter().any(|attr| *attr == StructGetterAttrib::GetterForceCopy);
-
-        let (type_name, fn_body) = match TypeKind::from_type(type_name) {
-            TypeKind::Primitive | TypeKind::PrimitiveTuple => (quote!(#type_name), quote!(self.#ident)),
-            TypeKind::String => (quote!(&str), quote!(&self.#ident)),
-            TypeKind::Other => (
-                if force_copy { quote!(#type_name) } else { quote!(&#type_name) },
-                if force_copy { quote!(self.#ident) } else { quote!(&self.#ident) },
-            ),
-        };
-        getters_fn.extend(quote! {
-            pub fn #ident(&self) -> #type_name {
-                #fn_body
-            }
-        })
-    }
-
-    let res = quote! {
-        impl #struct_name {
-            #getters_fn
         }
     };
 
