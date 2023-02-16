@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 
 use proc_macro2::Span;
-use quote::{quote, ToTokens};
-use syn::{DeriveInput, GenericParam, parse_macro_input};
+use quote::{quote};
+use syn::{DeriveInput, parse_macro_input};
 
 use crate::enum_str::get_snake_case_from_pascal_case;
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};

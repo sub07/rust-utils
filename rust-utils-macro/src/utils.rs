@@ -1,6 +1,6 @@
 use proc_macro2::TokenStream;
 use quote::{quote, ToTokens};
-use syn::{Data, DataEnum, DataStruct, DeriveInput, GenericParam, Generics, Path, Type, TypePath, TypeTuple};
+use syn::{Data, DataEnum, DataStruct, DeriveInput, GenericParam, Generics, Type, TypePath};
 
 pub fn get_enum_data(input: &DeriveInput) -> &DataEnum {
     if let Data::Enum(data_enum) = &input.data {

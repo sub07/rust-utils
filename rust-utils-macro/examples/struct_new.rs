@@ -1,40 +1,13 @@
-use std::cell::RefCell;
 use std::fmt::Display;
-use std::rc::Rc;
 use rust_utils_macro::New;
-
-// #[derive(Debug, New)]
-// struct S;
-//
-// #[allow(dead_code)]
-// #[derive(New, Debug)]
-// struct Test {
-//     pub gen: Rc<RefCell<S>>,
-//     #[new_default]
-//     pub x_offset: i32,
-//     #[new_default]
-//     pub y_offset: i32,
-//     // Comment
-//     pub height: i32,
-//     // Comment
-//     pub width: i32,
-// }
-//
-// #[derive(New, Debug)]
-// struct TGenerics<T, G> {
-//     t: Rc<T>,
-//     i: i8,
-//     g: G,
-// }
-
 
 #[derive(New, Debug)]
 pub struct GenericsWithBound<'a, T: Display, E: Default, const SIZE: usize> {
-    t1: i32,
-    t: T,
-    e: E,
-    r: &'a u8,
-    a: [u8; SIZE],
+    _t1: i32,
+    _t: T,
+    _e: E,
+    _r: &'a u8,
+    _a: [u8; SIZE],
 }
 
 
