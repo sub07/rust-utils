@@ -42,6 +42,11 @@ impl<I: Iterator<Item: Clone>> Iterator for SelfZip<I> {
     fn next(&mut self) -> Option<Self::Item> {
         SelfZip::next(self)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let (l, u) = self.iter.size_hint();
+        (l * self.zip_len, u.map(|u| u * self.zip_len))
+    }
 }
 
 pub trait ZipSelf<I: Iterator> {
