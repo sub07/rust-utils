@@ -12,6 +12,7 @@ impl<T: Number + ~ const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
     pub const fn size(&self) -> usize { SIZE }
     pub const fn default_const() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
     pub const fn zeros() -> Vector<T, SIZE> { Vector::default_const() }
+    #[inline]
     pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
 }
 
@@ -20,22 +21,36 @@ impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
 }
 
 impl<T: Number + ~ const DefaultConst> Vector<T, 2> {
+    #[inline]
     pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
+    #[inline]
     pub fn x(&self) -> T { self[0] }
+    #[inline]
     pub fn y(&self) -> T { self[1] }
-    pub fn w(&self) -> T { self[0] }
-    pub fn h(&self) -> T { self[1] }
+    #[inline]
+    pub fn w(&self) -> T { self.x() }
+    #[inline]
+    pub fn h(&self) -> T { self.y() }
+    #[inline]
     pub fn set_x(&mut self, new_x: T) { self[0] = new_x }
+    #[inline]
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
 
 impl<T: Number + ~ const DefaultConst> Vector<T, 3> {
+    #[inline]
     pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
+    #[inline]
     pub fn x(&self) -> T { self[0] }
+    #[inline]
     pub fn y(&self) -> T { self[1] }
+    #[inline]
     pub fn z(&self) -> T { self[2] }
+    #[inline]
     pub fn set_x(&mut self, new_x: T) { self[0] = new_x; }
+    #[inline]
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
+    #[inline]
     pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
 }
 

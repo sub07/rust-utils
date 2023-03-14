@@ -4,7 +4,7 @@ use rust_utils::vector::Vector;
 
 fn main() {
     const TEST: Vector<f64, 2> = Vector::from([4.0; 2]);
-    let mut pos1 = Vector::from([5.0; 2]);
+    let mut pos1 = Vector::from([5.0, 4.6]);
     const ZEROS: Vector<i32, 6> = Vector::default_const();
     const ZEROS2: Vector<i32, 6> = Vector::ZERO;
     let zeros: Vector<i32, 6> = Vector::default();
@@ -26,6 +26,11 @@ fn main() {
     dbg!(pos1 - [2.2, 3.3]);
     dbg!(pos1 * [2.2, 3.3]);
     dbg!(pos1 / [2.2, 3.3]);
+
+    dbg!(pos1.x());
+    dbg!(pos1.y());
+    dbg!(pos1.w());
+    dbg!(pos1.h());
 
     pos1 += [2.2, 3.3];
     pos1 -= [2.1, 3.3];
