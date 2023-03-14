@@ -23,6 +23,8 @@ impl<T: Number + ~ const DefaultConst> Vector<T, 2> {
     pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
     pub fn x(&self) -> T { self[0] }
     pub fn y(&self) -> T { self[1] }
+    pub fn w(&self) -> T { self[0] }
+    pub fn h(&self) -> T { self[1] }
     pub fn set_x(&mut self, new_x: T) { self[0] = new_x }
     pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
 }
