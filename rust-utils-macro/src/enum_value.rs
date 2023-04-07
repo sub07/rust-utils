@@ -21,6 +21,7 @@ pub fn get_nb_field(attributes_content: &[FieldAttributes]) -> usize {
 pub struct FieldAttributes {
     pub(crate) variant_ident: Ident,
     pub(crate) attribute_content: AttributeContent,
+    pub(crate) nb_unnamed_fields: usize,
 }
 
 #[derive(Debug)]

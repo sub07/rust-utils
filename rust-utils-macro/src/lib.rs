@@ -1,8 +1,8 @@
 use proc_macro::TokenStream;
 
 use proc_macro2::Span;
-use quote::{quote};
-use syn::{DeriveInput, parse_macro_input};
+use quote::quote;
+use syn::{DeriveInput, Fields, parse_macro_input};
 
 use crate::enum_str::get_snake_case_from_pascal_case;
 use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
@@ -50,7 +50,7 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
     let enum_name = &input.ident;
     let attributes_content = enum_data
         .variants.iter()
-        .map(|v|
+        .map(|v| {
             FieldAttributes {
                 variant_ident: v.ident.clone(),
                 attribute_content: syn::parse2::<AttributeContent>(
@@ -58,7 +58,13 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
                         .unwrap_or_else(|| panic!("Illegal variant without value attribute : {}", v.ident))
                         .tokens.clone()
                 ).expect("Invalid syntax in #[value(...)] : "),
+                nb_unnamed_fields: match &v.fields {
+                    Fields::Named(_) => panic!("Unsupported syntax"),
+                    Fields::Unnamed(fields) => fields.unnamed.len(),
+                    Fields::Unit => 0,
+                },
             }
+        }
         ).collect::<Vec<_>>();
 
     let nb_field = get_nb_field(&attributes_content);
@@ -97,13 +103,32 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
         };
 
         let literals =
-            attributes_content.iter().map(|attr| (attr.variant_ident.clone(), attr.attribute_content.values[field_index].value.clone())).collect::<Vec<_>>();
+            attributes_content.iter().map(
+                |attr| (
+                    attr.variant_ident.clone(),
+                    attr.attribute_content.values[field_index].value.clone(),
+                    attr.nb_unnamed_fields,
+                )
+            ).collect::<Vec<_>>();
 
         let mut match_statement = quote!();
 
-        for (ident, literal) in literals {
+        fn build_field_matching(nb_field: usize) -> proc_macro2::TokenStream {
+            let mut res = quote!();
+            if nb_field != 0 {
+                let mut matching = quote!();
+                for _ in 0..nb_field {
+                    matching.extend(quote!(_,))
+                }
+                res.extend(quote!((#matching)));
+            }
+            res
+        }
+
+        for (ident, literal, nb_field) in literals {
+            let field_matching = build_field_matching(nb_field);
             match_statement.extend(quote! {
-                #enum_name::#ident => #literal,
+                #enum_name::#ident #field_matching => #literal,
             });
         }
 
