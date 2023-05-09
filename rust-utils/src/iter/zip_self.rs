@@ -5,9 +5,17 @@ pub struct SelfZip<I: Iterator> {
     zip_len: usize,
 }
 
-impl<I: Iterator<Item: Clone>> SelfZip<I> {
+impl<I: Iterator> SelfZip<I>
+where
+    I::Item: Clone,
+{
     pub(crate) fn new(iter: I, zip_len: usize) -> SelfZip<I> {
-        SelfZip { iter, last_val: None, count: 0, zip_len }
+        SelfZip {
+            iter,
+            last_val: None,
+            count: 0,
+            zip_len,
+        }
     }
 
     pub(crate) fn next(&mut self) -> Option<I::Item> {
@@ -36,7 +44,10 @@ impl<I: Iterator<Item: Clone>> SelfZip<I> {
     }
 }
 
-impl<I: Iterator<Item: Clone>> Iterator for SelfZip<I> {
+impl<I: Iterator> Iterator for SelfZip<I>
+where
+    I::Item: Clone,
+{
     type Item = I::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -53,7 +64,10 @@ pub trait ZipSelf<I: Iterator> {
     fn zip_self(self, zip_len: usize) -> SelfZip<I>;
 }
 
-impl<I: Iterator<Item: Clone>> ZipSelf<I> for I {
+impl<I: Iterator> ZipSelf<I> for I
+where
+    I::Item: Clone,
+{
     fn zip_self(self, zip_len: usize) -> SelfZip<Self> {
         SelfZip::new(self, zip_len)
     }
