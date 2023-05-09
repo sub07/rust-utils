@@ -1,233 +1,475 @@
-use std::ops::{Index, IndexMut};
+use std::ops::{Add, Deref, DerefMut, Div, Index, IndexMut, Mul, Sub};
 
-use crate::number::{DefaultConst, Number};
-
-#[derive(Debug, Clone, Copy)]
-pub struct Vector<T: Number + ~ const DefaultConst, const SIZE: usize>([T; SIZE]);
-
-impl<T: Number + ~ const DefaultConst, const SIZE: usize> Vector<T, SIZE> {
-    pub const ZERO: Vector<T, SIZE> = Vector::zeros();
-    pub const fn as_slice(&self) -> &[T; SIZE] { &self.0 }
-    pub fn as_slice_mut(&mut self) -> &mut [T; SIZE] { &mut self.0 }
-    pub const fn size(&self) -> usize { SIZE }
-    pub const fn default_const() -> Vector<T, SIZE> { Vector::from([T::default_const(); SIZE]) }
-    pub const fn zeros() -> Vector<T, SIZE> { Vector::default_const() }
-    #[inline]
-    pub const fn init_with(initial_value: T) -> Vector<T, SIZE> { Vector::from([initial_value; SIZE]) }
+pub trait Number:
+    Copy
+    + PartialEq
+    + Add<Self, Output = Self>
+    + Sub<Self, Output = Self>
+    + Mul<Self, Output = Self>
+    + Div<Self, Output = Self>
+    + Default
+{
 }
 
-impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
-    fn default() -> Self { Vector::default_const() }
-}
-
-impl<T: Number + ~ const DefaultConst> Vector<T, 2> {
-    #[inline]
-    pub const fn new(x: T, y: T) -> Vector<T, 2> { Vector([x, y]) }
-    #[inline]
-    pub fn x(&self) -> T { self[0] }
-    #[inline]
-    pub fn y(&self) -> T { self[1] }
-    #[inline]
-    pub fn w(&self) -> T { self.x() }
-    #[inline]
-    pub fn h(&self) -> T { self.y() }
-    #[inline]
-    pub fn set_x(&mut self, new_x: T) { self[0] = new_x }
-    #[inline]
-    pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
-}
-
-impl<T: Number + ~ const DefaultConst> Vector<T, 3> {
-    #[inline]
-    pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> { Vector([x, y, z]) }
-    #[inline]
-    pub fn x(&self) -> T { self[0] }
-    #[inline]
-    pub fn y(&self) -> T { self[1] }
-    #[inline]
-    pub fn z(&self) -> T { self[2] }
-    #[inline]
-    pub fn set_x(&mut self, new_x: T) { self[0] = new_x; }
-    #[inline]
-    pub fn set_y(&mut self, new_y: T) { self[1] = new_y; }
-    #[inline]
-    pub fn set_z(&mut self, new_z: T) { self[2] = new_z; }
-}
-
-impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<[T; SIZE]> for Vector<T, SIZE> {
-    fn from(values: [T; SIZE]) -> Self { Vector(values) }
-}
-
-impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&[T; SIZE]> for Vector<T, SIZE> {
-    fn from(values: &[T; SIZE]) -> Self { Vector(*values) }
-}
-
-impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<&Vector<T, SIZE>> for Vector<T, SIZE> {
-    fn from(value: &Vector<T, SIZE>) -> Self { *value }
-}
-
-impl<T: Number + ~ const DefaultConst, const SIZE: usize> const From<T> for Vector<T, SIZE> {
-    fn from(value: T) -> Self { Vector::init_with(value) }
-}
-
-impl<T: Number, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
-    type Output = T;
-
-    fn index(&self, index: usize) -> &Self::Output { &self.0[index] }
-}
-
-impl<T: Number, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output { &mut self.0[index] }
-}
-
-macro_rules! enable_multiple_args {
-    ($macro_name:ident,) => ();
-    ($macro_name:ident, $arg:tt $($args:tt)*) => {
-        $macro_name!($arg);
-        enable_multiple_args!($macro_name, $($args)*);
+macro_rules! impl_number_trait_for {
+    ($num_ty:tt $($other_num_ty:tt) *) => {
+        impl Number for $num_ty {}
+        impl_number_trait_for!($($other_num_ty) *);
     };
+    () => {};
 }
 
-macro_rules! parse_op {
-    (assign, +=, $macro_name:ident) => ($macro_name!(+, AddAssign, add_assign););
-    (assign, -=, $macro_name:ident) => ($macro_name!(-, SubAssign, sub_assign););
-    (assign, *=, $macro_name:ident) => ($macro_name!(*, MulAssign, mul_assign););
-    (assign, /=, $macro_name:ident) => ($macro_name!(/, DivAssign, div_assign););
-    (+, $macro_name:ident) => ($macro_name!(+, Add, add););
-    (-, $macro_name:ident) => ($macro_name!(-, Sub, sub););
-    (*, $macro_name:ident) => ($macro_name!(*, Mul, mul););
-    (/, $macro_name:ident) => ($macro_name!(/, Div, div););
-}
+impl_number_trait_for!(i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64);
 
-macro_rules! emit_vec_binary_op_impl {
-    ($trait_name:ident, $fn_name:ident, |$left:ident:$impl_ty:ty, $right:ident:$rhs_ty:ty| -> $output_ty:ty $fn_body:block) => {
-        impl <T: Number, const SIZE: usize> std::ops::$trait_name<$rhs_ty> for $impl_ty {
-            type Output = $output_ty;
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Vector<T, const SIZE: usize>([T; SIZE]);
 
-            fn $fn_name(self, rhs: $rhs_ty) -> Self::Output {
-                (|$left:$impl_ty, $right:$rhs_ty| -> $output_ty { $fn_body })(self, rhs)
-            }
-        }
-    };
-}
-
-macro_rules! emit_vec_assign_op_impl {
-    ($trait_name:ident, $fn_name:ident, |$left:ident: &mut $impl_ty:ty, $right:ident:$rhs_ty:ty| $fn_body:block) => {
-        impl <T: Number, const SIZE: usize> std::ops::$trait_name<$rhs_ty> for $impl_ty {
-            #[allow(clippy::redundant_closure_call)]
-            fn $fn_name(&mut self, rhs: $rhs_ty) {
-                (|$left:&mut $impl_ty, $right:$rhs_ty| $fn_body)(self, rhs)
-            }
-        }
-    };
-}
-
-macro_rules! impl_vec_op_vec {
-    ($op:tt) => (parse_op!($op, impl_vec_op_vec););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>, Vector<T, SIZE>);
-        impl_vec_op_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>, Vector<T, SIZE>);
-        impl_vec_op_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>, &Vector<T, SIZE>);
-        impl_vec_op_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &Vector<T, SIZE>);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        // TODO Maybe dont use zip then map to avoid temp array creation
-        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector(l.0.zip(r.0).map(|(l, r)| l $op r)) });
-    };
-}
-
-macro_rules! impl_vec_op_num {
-    ($op:tt) => (parse_op!($op, impl_vec_op_num););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_num!($op, $trait_name, $fn_name, Vector<T, SIZE>, T);
-        impl_vec_op_num!($op, $trait_name, $fn_name, &Vector<T, SIZE>, T);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        // TODO Vec from create temp vector of the same value that coulmd be avoided
-        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector::from(l) + Vector::from(r) });
-    };
-}
-
-macro_rules! impl_vec_op_slice {
-    ($op:tt) => (parse_op!($op, impl_vec_op_slice););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, [T; SIZE]);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, [T; SIZE]);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &Vector<T, SIZE>, &[T; SIZE]);
-
-        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] , Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, [T; SIZE] , &Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE], Vector<T, SIZE>);
-        impl_vec_op_slice!($op, $trait_name, $fn_name, &[T; SIZE], &Vector<T, SIZE>);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        emit_vec_binary_op_impl!($trait_name, $fn_name, |l: $ty1, r: $ty2| -> Vector<T, SIZE> { Vector::from(l) $op Vector::from(r) });
-    };
-}
-
-macro_rules! impl_vec_op_assign_vec {
-    ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_vec););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, Vector<T, SIZE>);
-        impl_vec_op_assign_vec!($op, $trait_name, $fn_name, &Vector<T, SIZE>);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut Vector<T, SIZE>, r: $ty| { for i in 0..SIZE { l[i] = l[i] $op r[i]; } });
-    };
-}
-
-macro_rules! impl_vec_op_assign_num {
-    ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_num););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_assign_num!($op, $trait_name, $fn_name, Vector<T, SIZE>);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty, r: T| { for i in 0..SIZE { l[i] = l[i] $op r; } });
-    };
-}
-
-macro_rules! impl_vec_op_assign_slice {
-    ($op:tt) => (parse_op!(assign, $op, impl_vec_op_assign_slice););
-    ($op:tt, $trait_name:ident, $fn_name:ident) => {
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, [T; SIZE]);
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, Vector<T, SIZE>, &[T; SIZE]);
-
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE], Vector<T, SIZE>);
-        impl_vec_op_assign_slice!($op, $trait_name, $fn_name, [T; SIZE], &Vector<T, SIZE>);
-    };
-    ($op:tt, $trait_name:ident, $fn_name:ident, $ty1:ty, $ty2:ty) => {
-        emit_vec_assign_op_impl!($trait_name, $fn_name, |l: &mut $ty1, r: $ty2| { for i in 0..SIZE { l[i] = l[i] $op r[i]; } });
-    };
-}
-
-macro_rules! impl_num_op_vec {
-    ($ty:ty) => {
-        impl_num_op_vec!($ty, Add, add);
-        impl_num_op_vec!($ty, Sub, sub);
-        impl_num_op_vec!($ty, Mul, mul);
-        impl_num_op_vec!($ty, Div, div);
-    };
-    ($ty:ty, $trait_name:ident, $fn_name:ident) => {
-        impl <const SIZE: usize> std::ops::$trait_name<Vector<$ty, SIZE>> for $ty {
-            type Output = Vector<$ty, SIZE>;
-
-            fn $fn_name(self, rhs: Vector<$ty, SIZE>) -> Self::Output {
-                let mut res :[$ty; SIZE] = [Default::default(); SIZE];
-                for i in 0..SIZE {
-                    res[i] = std::ops::$trait_name::$fn_name(self, rhs[i]);
-                }
-                res.into()
-            }
-        }
+impl<T, const SIZE: usize> Vector<T, SIZE> {
+    pub const fn as_slice(&self) -> &[T; SIZE] {
+        &self.0
+    }
+    pub fn as_slice_mut(&mut self) -> &mut [T; SIZE] {
+        &mut self.0
+    }
+    pub const fn size(&self) -> usize {
+        SIZE
     }
 }
 
-enable_multiple_args!(impl_vec_op_vec, + - * /);
-enable_multiple_args!(impl_vec_op_num, + - * /);
-enable_multiple_args!(impl_num_op_vec, i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64);
+impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
+    fn default() -> Self {
+        T::default().into()
+    }
+}
 
-enable_multiple_args!(impl_vec_op_slice, + - * /);
-enable_multiple_args!(impl_vec_op_assign_vec, += -= *= /=);
-enable_multiple_args!(impl_vec_op_assign_num, += -= *= /=);
-enable_multiple_args!(impl_vec_op_assign_slice, += -= *= /=);
+impl<T: Number> Vector<T, 2> {
+    pub const fn new(x: T, y: T) -> Vector<T, 2> {
+        Vector([x, y])
+    }
+    pub fn x(&self) -> T {
+        self[0]
+    }
+    pub fn y(&self) -> T {
+        self[1]
+    }
+    pub fn w(&self) -> T {
+        self.x()
+    }
+    pub fn h(&self) -> T {
+        self.y()
+    }
+    pub fn set_x(&mut self, new_x: T) {
+        self[0] = new_x
+    }
+    pub fn set_y(&mut self, new_y: T) {
+        self[1] = new_y;
+    }
+}
+
+impl<T: Number> Vector<T, 3> {
+    pub const fn new(x: T, y: T, z: T) -> Vector<T, 3> {
+        Vector([x, y, z])
+    }
+    pub fn x(&self) -> T {
+        self[0]
+    }
+    pub fn y(&self) -> T {
+        self[1]
+    }
+    pub fn z(&self) -> T {
+        self[2]
+    }
+    pub fn set_x(&mut self, new_x: T) {
+        self[0] = new_x;
+    }
+    pub fn set_y(&mut self, new_y: T) {
+        self[1] = new_y;
+    }
+    pub fn set_z(&mut self, new_z: T) {
+        self[2] = new_z;
+    }
+}
+
+#[macro_export]
+macro_rules! vector {
+    [$($val:literal),+] => { Vector::from([$($val),+]) };
+}
+
+impl<T, const SIZE: usize> From<[T; SIZE]> for Vector<T, SIZE> {
+    fn from(values: [T; SIZE]) -> Self {
+        Vector(values)
+    }
+}
+
+impl<T: Clone, const SIZE: usize> From<&[T; SIZE]> for Vector<T, SIZE> {
+    fn from(values: &[T; SIZE]) -> Self {
+        Vector(values.clone())
+    }
+}
+
+impl<T: Number, const SIZE: usize> From<T> for Vector<T, SIZE> {
+    fn from(value: T) -> Self {
+        Vector([value; SIZE])
+    }
+}
+
+impl<T, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
+    type Output = T;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.as_slice()[index]
+    }
+}
+
+impl<T, const SIZE: usize> IndexMut<usize> for Vector<T, SIZE> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.as_slice_mut()[index]
+    }
+}
+
+impl<T, const SIZE: usize> Deref for Vector<T, SIZE> {
+    type Target = [T; SIZE];
+
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
+}
+
+impl<T, const SIZE: usize> DerefMut for Vector<T, SIZE> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.as_slice_mut()
+    }
+}
+
+/*
+   Impl | vec   op  vec
+        | &vec  op  vec
+        | vec   op  &vec
+        | &vec  op  &vec
+*/
+
+macro_rules! impl_op_vec_vec {
+    ($op:tt, $trait_name:ident, $trait_fn:ident, $lhs_ty:ty, $rhs_ty:ty) => {
+        impl <T: Number, const SIZE: usize> std::ops::$trait_name<$rhs_ty> for $lhs_ty {
+            type Output = Vector<T, SIZE>;
+
+            fn $trait_fn(self, rhs: $rhs_ty) -> Self::Output {
+                core::array::from_fn(|i| self[i] $op rhs[i]).into()
+            }
+        }
+    };
+}
+
+macro_rules! gen_op_vec_vec_ref {
+    ($op:tt, $trait_name:ident, $trait_fn:ident) => {
+        impl_op_vec_vec!($op, $trait_name, $trait_fn, Vector<T, SIZE>, Vector<T, SIZE>);
+        impl_op_vec_vec!($op, $trait_name, $trait_fn, &Vector<T, SIZE>, Vector<T, SIZE>);
+        impl_op_vec_vec!($op, $trait_name, $trait_fn, Vector<T, SIZE>, &Vector<T, SIZE>);
+        impl_op_vec_vec!($op, $trait_name, $trait_fn, &Vector<T, SIZE>, &Vector<T, SIZE>);
+    };
+}
+
+gen_op_vec_vec_ref!(+, Add, add);
+gen_op_vec_vec_ref!(-, Sub, sub);
+gen_op_vec_vec_ref!(*, Mul, mul);
+gen_op_vec_vec_ref!(/, Div, div);
+
+/*
+   Impl | num   op  vec
+        | num   op  &vec
+*/
+
+macro_rules! impl_op_num_vec {
+    ($op:tt, $trait_name:ident, $trait_fn:ident, $num_ty:ty) => {
+        impl_op_num_vec!($op, $trait_name, $trait_fn, $num_ty, Vector<$num_ty, SIZE>);
+        impl_op_num_vec!($op, $trait_name, $trait_fn, $num_ty, &Vector<$num_ty, SIZE>);
+    };
+    ($op:tt, $trait_name:ident, $trait_fn:ident, $num_ty:ty, $vec_ty:ty) => {
+        impl <const SIZE: usize> std::ops::$trait_name<$vec_ty> for $num_ty {
+            type Output = Vector<$num_ty, SIZE>;
+
+            fn $trait_fn(self, rhs: $vec_ty) -> Self::Output {
+                core::array::from_fn(|i| self $op rhs[i]).into()
+            }
+        }
+    };
+}
+
+macro_rules! gen_op_num_vec {
+    ($num_ty:tt $($other_num_ty:tt) *) => {
+        impl_op_num_vec!(+, Add, add, $num_ty);
+        impl_op_num_vec!(-, Sub, sub, $num_ty);
+        impl_op_num_vec!(*, Mul, mul, $num_ty);
+        impl_op_num_vec!(/, Div, div, $num_ty);
+        gen_op_num_vec!($($other_num_ty) *);
+    };
+    () => {};
+}
+
+gen_op_num_vec!(i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64);
+
+/*
+   Impl | vec   op  num
+        | &vec   op  num
+*/
+
+macro_rules! impl_op_vec_num {
+    ($op:tt, $trait_name:ident, $trait_fn:ident, $vec_ty:ty) => {
+        impl <T: Number, const SIZE: usize> std::ops::$trait_name<T> for $vec_ty {
+            type Output = Vector<T, SIZE>;
+
+            fn $trait_fn(self, rhs: T) -> Self::Output {
+                core::array::from_fn(|i| self[i] $op rhs).into()
+            }
+        }
+    };
+}
+
+macro_rules! gen_op_vec_num {
+    ($op:tt, $trait_name:ident, $trait_fn:ident) => {
+        impl_op_vec_num!($op, $trait_name, $trait_fn, Vector<T, SIZE>);
+        impl_op_vec_num!($op, $trait_name, $trait_fn, &Vector<T, SIZE>);
+    };
+}
+
+gen_op_vec_num!(+, Add, add);
+gen_op_vec_num!(-, Sub, sub);
+gen_op_vec_num!(*, Mul, mul);
+gen_op_vec_num!(/, Div, div);
+
+/*
+   Impl | vec op= vec
+        | vec op= &vec
+*/
+
+macro_rules! impl_op_assign_vec_vec {
+    ($op:tt, $trait_name:ident, $trait_fn:ident, $vec_ty:ty) => {
+        impl<T: Number, const SIZE: usize> std::ops::$trait_name<$vec_ty> for Vector<T, SIZE> {
+            fn $trait_fn(&mut self, rhs: $vec_ty) {
+                for (a, b) in self.as_slice_mut().iter_mut().zip(rhs.as_slice().iter()) {
+                    *a = *a $op *b;
+                }
+            }
+        }
+    };
+}
+
+macro_rules! gen_op_assign_vec_vec {
+    ($op:tt, $trait_name:ident, $trait_fn:ident) => {
+        impl_op_assign_vec_vec!($op, $trait_name, $trait_fn, Vector<T, SIZE>);
+        impl_op_assign_vec_vec!($op, $trait_name, $trait_fn, &Vector<T, SIZE>);
+    };
+}
+
+gen_op_assign_vec_vec!(+, AddAssign, add_assign);
+gen_op_assign_vec_vec!(-, SubAssign, sub_assign);
+gen_op_assign_vec_vec!(*, MulAssign, mul_assign);
+gen_op_assign_vec_vec!(/, DivAssign, div_assign);
+
+/*
+   Impl vec op= num
+*/
+
+macro_rules! impl_op_assign_vec_num {
+    ($op:tt, $trait_name:ident, $trait_fn:ident) => {
+        impl<T: Number, const SIZE: usize> std::ops::$trait_name<T> for Vector<T, SIZE> {
+            fn $trait_fn(&mut self, rhs: T) {
+                for val in self.as_slice_mut().iter_mut() {
+                    *val = *val $op rhs;
+                }
+            }
+        }
+    };
+}
+
+impl_op_assign_vec_num!(+, AddAssign, add_assign);
+impl_op_assign_vec_num!(-, SubAssign, sub_assign);
+impl_op_assign_vec_num!(*, MulAssign, mul_assign);
+impl_op_assign_vec_num!(/, DivAssign, div_assign);
+
+#[cfg(test)]
+mod vec_tests {
+    use crate::vector::Vector;
+
+    #[test]
+    fn from_slice() {
+        let initial_slice = [5.0, 3.0, 2.0];
+        let v = Vector::from(initial_slice);
+        assert_eq!(v.as_slice(), &initial_slice);
+
+        let initial_slice = [5.0, 3.0, 2.0];
+        let v = Vector::from(&initial_slice);
+        assert_eq!(v.as_slice(), &initial_slice);
+    }
+
+    #[test]
+    fn from_number() {
+        const SIZE: usize = 5;
+        let initial_num = 5.0;
+        let v: Vector<f64, SIZE> = Vector::from(initial_num);
+        assert_eq!(v.size(), SIZE);
+        for x in v.iter() {
+            assert_eq!(*x, initial_num);
+        }
+    }
+
+    #[test]
+    fn add_vec_vec() {
+        let v1 = vector![10, 20, 30];
+        let v2 = vector![5, -5, -15];
+
+        let res = v1 + v2;
+
+        assert_eq!(res, [15, 15, 15].into())
+    }
+
+    #[test]
+    fn sub_vec_vec() {
+        let v1 = vector![10, 20, 30];
+        let v2 = vector![5, -5, -15];
+
+        let res = v1 - v2;
+
+        assert_eq!(res, [5, 25, 45].into())
+    }
+
+    #[test]
+    fn mul_vec_vec() {
+        let v1 = vector![10, 20, 30];
+        let v2 = vector![5, -5, -15];
+
+        let res = v1 * v2;
+
+        assert_eq!(res, [50, -100, -450].into())
+    }
+
+    #[test]
+    fn div_vec_vec() {
+        let v1 = vector![10, 20, 30];
+        let v2 = vector![5, -5, -15];
+
+        let res = v1 / v2;
+
+        assert_eq!(res, [2, -4, -2].into())
+    }
+
+    #[test]
+    fn add_num_vec() {
+        let num = 5;
+        let v = vector![10, 20, 30];
+
+        let res = num + v;
+
+        assert_eq!(res, [15, 25, 35].into())
+    }
+
+    #[test]
+    fn sub_num_vec() {
+        let num = 5;
+        let v = vector![10, 20, 30];
+
+        let res = num - v;
+
+        assert_eq!(res, [-5, -15, -25].into())
+    }
+
+    #[test]
+    fn mul_num_vec() {
+        let num = 5;
+        let v = vector![10, 20, 30];
+
+        let res = num * v;
+
+        assert_eq!(res, [50, 100, 150].into())
+    }
+
+    #[test]
+    fn div_num_vec() {
+        let num = 1000;
+        let v = vector![10, 20, 30];
+
+        let res = num / v;
+
+        assert_eq!(res, [100, 50, 33].into())
+    }
+
+    #[test]
+    fn add_vec_num() {
+        let v = vector![10, 20, 30];
+        let num = 5;
+
+        let res = v + num;
+
+        assert_eq!(res, [15, 25, 35].into())
+    }
+
+    #[test]
+    fn sub_vec_num() {
+        let v = vector![10, 20, 30];
+        let num = 5;
+
+        let res = v - num;
+
+        assert_eq!(res, [5, 15, 25].into())
+    }
+
+    #[test]
+    fn mul_vec_num() {
+        let v = vector![10, 20, 30];
+        let num = 5;
+
+        let res = v * num;
+
+        assert_eq!(res, [50, 100, 150].into())
+    }
+
+    #[test]
+    fn div_vec_num() {
+        let v = vector![1000, 2000, 3000];
+        let num = 10;
+
+        let res = v / num;
+
+        assert_eq!(res, [100, 200, 300].into())
+    }
+
+    #[test]
+    fn add_assign_vec_vec() {
+        let mut v = vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(v, vector![1, 2, 3, 4]);
+        v += v2;
+        assert_eq!(v, vector![3, 5, 7, 9]);
+    }
+
+    #[test]
+    fn sub_assign_vec_vec() {
+        let mut v = vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(v, vector![1, 2, 3, 4]);
+        v -= v2;
+        assert_eq!(v, vector![-1, -1, -1, -1]);
+    }
+
+    #[test]
+    fn mul_assign_vec_vec() {
+        let mut v = vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(v, vector![1, 2, 3, 4]);
+        v *= v2;
+        assert_eq!(v, vector![2, 6, 12, 20]);
+    }
+
+    #[test]
+    fn div_assign_vec_vec() {
+        let mut v = vector![4, 8, 16, 32];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(v, vector![4, 8, 16, 32]);
+        v /= v2;
+        assert_eq!(v, vector![2, 2, 4, 6]);
+    }
+}
