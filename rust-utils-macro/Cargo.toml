@@ -1,5 +1,5 @@
 [package]
-name = "rust_utils_macro"
+name = "rust-utils-macro"
 version = "1.1.0"
 edition = "2021"
 
