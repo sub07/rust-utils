@@ -1,16 +1,21 @@
 use proc_macro2::Literal;
-use syn::{Ident, parenthesized, Token, token, TypePath};
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
+use syn::token::Token;
+use syn::{parenthesized, token, Ident, Token, Type, TypePath};
 
 pub fn get_nb_field(attributes_content: &[FieldAttributes]) -> usize {
-    let values_length = attributes_content.iter().map(|attr| attr.attribute_content.values.len()).collect::<Vec<_>>();
+    let values_length = attributes_content
+        .iter()
+        .map(|attr| attr.attribute_content.values.len())
+        .collect::<Vec<_>>();
 
     if values_length.is_empty() {
         panic!("No field in value");
     }
 
-    if values_length.iter().max() != values_length.iter().min() { // All values are equals
+    if values_length.iter().max() != values_length.iter().min() {
+        // All values are equals
         panic!("Must have the same number of fields in all values");
     }
 
@@ -44,8 +49,9 @@ impl Parse for AttributeContent {
 pub struct Value {
     pub(crate) ident: Ident,
     _colon: Token!(:),
-    pub(crate) type_name: TypePath,
+    pub(crate) type_name: Type,
     _equals: Token!(=),
+    pub(crate) neg_sign: Option<Token!(-)>,
     pub(crate) value: Literal,
 }
 
@@ -56,6 +62,7 @@ impl Parse for Value {
             _colon: input.parse()?,
             type_name: input.parse()?,
             _equals: input.parse()?,
+            neg_sign: input.parse()?,
             value: input.parse()?,
         })
     }

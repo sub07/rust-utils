@@ -1,18 +1,21 @@
 use proc_macro::TokenStream;
 
 use proc_macro2::Span;
-use quote::quote;
-use syn::{DeriveInput, Fields, parse_macro_input};
+use quote::{quote, ToTokens};
+use syn::{parse_macro_input, DeriveInput, Fields};
 
 use crate::enum_str::get_snake_case_from_pascal_case;
-use crate::enum_value::{AttributeContent, FieldAttributes, get_nb_field};
+use crate::enum_value::{get_nb_field, AttributeContent, FieldAttributes};
 use crate::struct_new::StructNewAttrib;
-use crate::utils::{all_equals, get_enum_data, get_generics_types_from_declared, get_struct_data, is_struct_tuple, is_type_generic};
+use crate::utils::{
+    all_equals, get_enum_data, get_generics_types_from_declared, get_struct_data, is_struct_tuple,
+    is_type_generic,
+};
 
-mod utils;
-mod enum_value;
 mod enum_str;
+mod enum_value;
 mod struct_new;
+mod utils;
 
 #[proc_macro_derive(EnumIter)]
 pub fn enum_iter_derive(input: TokenStream) -> TokenStream {
@@ -49,49 +52,56 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
     let enum_data = get_enum_data(&input);
     let enum_name = &input.ident;
     let attributes_content = enum_data
-        .variants.iter()
-        .map(|v| {
-            FieldAttributes {
-                variant_ident: v.ident.clone(),
-                attribute_content: syn::parse2::<AttributeContent>(
-                    v.attrs.first()
-                        .unwrap_or_else(|| panic!("Illegal variant without value attribute : {}", v.ident))
-                        .tokens.clone()
-                ).expect("Invalid syntax in #[value(...)] : "),
-                nb_unnamed_fields: match &v.fields {
-                    Fields::Named(_) => panic!("Unsupported syntax"),
-                    Fields::Unnamed(fields) => fields.unnamed.len(),
-                    Fields::Unit => 0,
-                },
-            }
-        }
-        ).collect::<Vec<_>>();
+        .variants
+        .iter()
+        .map(|v| FieldAttributes {
+            variant_ident: v.ident.clone(),
+            attribute_content: syn::parse2::<AttributeContent>(
+                v.attrs
+                    .first()
+                    .unwrap_or_else(|| {
+                        panic!("Illegal variant without value attribute : {}", v.ident)
+                    })
+                    .tokens
+                    .clone(),
+            )
+            .expect("Invalid syntax in #[value(...)]"),
+            nb_unnamed_fields: match &v.fields {
+                Fields::Named(_) => panic!("Unsupported syntax"),
+                Fields::Unnamed(fields) => fields.unnamed.len(),
+                Fields::Unit => 0,
+            },
+        })
+        .collect::<Vec<_>>();
 
     let nb_field = get_nb_field(&attributes_content);
 
     for field_index in 0..nb_field {
-        let values = attributes_content.iter()
-            .map(|f|
-                f.attribute_content
-                    .values.iter()
-                    .nth(field_index).unwrap()
-            )
+        let values = attributes_content
+            .iter()
+            .map(|f| f.attribute_content.values.iter().nth(field_index).unwrap())
             .collect::<Vec<_>>();
-        let idents = values.iter().map(|v| v.ident.to_string()).collect::<Vec<_>>();
-        let types = values.iter()
-            .map(|v|
-                v.type_name.path
-                    .get_ident().expect("Only single segments paths type are supported")
-                    .to_string()
-            )
+        let idents = values
+            .iter()
+            .map(|v| v.ident.to_string())
+            .collect::<Vec<_>>();
+        let types = values
+            .iter()
+            .map(|v| v.type_name.clone().into_token_stream().to_string())
             .collect::<Vec<_>>();
 
         if !all_equals(&idents) {
-            panic!("Field n°{} names are not all equals : {idents:#?}", field_index + 1);
+            panic!(
+                "Field n°{} names are not all equals : {idents:#?}",
+                field_index + 1
+            );
         }
 
         if !all_equals(&types) {
-            panic!("Field n°{} types are not all equals : {types:#?}", field_index + 1);
+            panic!(
+                "Field n°{} types are not all equals : {types:#?}",
+                field_index + 1
+            );
         }
     }
 
@@ -102,14 +112,17 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
             (value.ident.clone(), value.type_name.clone())
         };
 
-        let literals =
-            attributes_content.iter().map(
-                |attr| (
+        let literals = attributes_content
+            .iter()
+            .map(|attr| {
+                (
                     attr.variant_ident.clone(),
+                    attr.attribute_content.values[field_index].neg_sign.clone(),
                     attr.attribute_content.values[field_index].value.clone(),
                     attr.nb_unnamed_fields,
                 )
-            ).collect::<Vec<_>>();
+            })
+            .collect::<Vec<_>>();
 
         let mut match_statement = quote!();
 
@@ -125,10 +138,10 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
             res
         }
 
-        for (ident, literal, nb_field) in literals {
+        for (ident, optional_sign, literal, nb_field) in literals {
             let field_matching = build_field_matching(nb_field);
             match_statement.extend(quote! {
-                #enum_name::#ident #field_matching => #literal,
+                #enum_name::#ident #field_matching => #optional_sign #literal,
             });
         }
 
@@ -168,11 +181,15 @@ pub fn struct_new_derive(input: TokenStream) -> TokenStream {
         let ident = &field.ident.as_ref().unwrap();
         let type_name = &field.ty;
 
-        let attribs = field.attrs.iter()
+        let attribs = field
+            .attrs
+            .iter()
             .filter_map(|attr| StructNewAttrib::try_from_attrib_path(&attr.path))
             .collect::<Vec<_>>();
 
-        let is_new_default_attrib_present = attribs.iter().any(|attr| *attr == StructNewAttrib::NewDefault);
+        let is_new_default_attrib_present = attribs
+            .iter()
+            .any(|attr| *attr == StructNewAttrib::NewDefault);
 
         if is_new_default_attrib_present {
             struct_creation_fields.extend(quote!(#ident: Default::default(),));

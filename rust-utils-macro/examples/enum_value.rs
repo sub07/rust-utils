@@ -1,5 +1,8 @@
-use rust_utils_macro::{EnumValue};
+use crate::Direction::{Down, Left, Right, Up};
+use rust_utils_macro::EnumValue;
+use std::env::var;
 use TestEnum2::Var1;
+
 use crate::TestEnum2::{Var2, Var3, Var4};
 
 #[derive(Debug)]
@@ -17,8 +20,24 @@ pub enum TestEnum2 {
     Var4,
 }
 
+#[derive(Eq, PartialEq, Copy, Clone, Debug, EnumValue)]
+pub enum Direction {
+    #[value(x: i32 = -1, y: i32 = 0)]
+    Left,
+    #[value(x: i32 = 1, y: i32 = 0)]
+    Right,
+    #[value(x: i32 = 0, y: i32 = -1)]
+    Up,
+    #[value(x: i32 = 0, y: i32 = 1)]
+    Down,
+}
+
 fn main() {
     for variant in vec![Var1(Test(5)), Var2, Var3, Var4] {
         println!("{:?} {}", variant, variant.offset());
+    }
+
+    for variant in &[Left, Right, Up, Down] {
+        println!("{:?} x:{} y:{}", variant, variant.x(), variant.y());
     }
 }
