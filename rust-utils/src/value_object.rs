@@ -28,7 +28,7 @@ macro_rules! define_value_object {
         impl TryFrom<$ty> for $name {
             type Error = String;
 
-            fn try_from(value: f32) -> Result<Self, String> {
+            fn try_from(value: $ty) -> Result<Self, String> {
                 $name::new(value).ok_or(format!("Invalid value: {}", value))
             }
         }
