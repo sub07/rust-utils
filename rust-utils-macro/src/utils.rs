@@ -24,33 +24,35 @@ pub fn is_struct_tuple(struct_data: &DataStruct) -> bool {
 
 pub fn all_equals<T: Eq>(idents: &[T]) -> bool {
     let first = idents.iter().next();
-    idents.iter().fold(first, |acc, ident| {
-        acc.and_then(|acc| if acc == ident { Some(acc) } else { None })
-    }).is_some()
+    idents
+        .iter()
+        .fold(first, |acc, ident| {
+            acc.and_then(|acc| if acc == ident { Some(acc) } else { None })
+        })
+        .is_some()
 }
 
 pub fn is_type_generic(generics: &Generics, ty: &Type) -> bool {
     if let Type::Path(TypePath { path, .. }) = &ty {
-        generics.type_params().map(|tp| &tp.ident).any(|g| path.is_ident(g))
+        generics
+            .type_params()
+            .map(|tp| &tp.ident)
+            .any(|g| path.is_ident(g))
     } else {
         false
     }
 }
 
 pub fn get_generics_types_from_declared(declared_generics: &Generics) -> TokenStream {
-    let generics_idents = declared_generics.params.iter().map(|p| {
-        match p {
-            GenericParam::Type(t) => {
-                t.ident.to_token_stream()
-            }
-            GenericParam::Lifetime(l) => {
-                l.to_token_stream()
-            }
-            GenericParam::Const(c) => {
-                c.ident.to_token_stream()
-            }
-        }
-    }).collect::<Vec<_>>();
+    let generics_idents = declared_generics
+        .params
+        .iter()
+        .map(|p| match p {
+            GenericParam::Type(t) => t.ident.to_token_stream(),
+            GenericParam::Lifetime(l) => l.to_token_stream(),
+            GenericParam::Const(c) => c.ident.to_token_stream(),
+        })
+        .collect::<Vec<_>>();
 
     if generics_idents.is_empty() {
         quote!()

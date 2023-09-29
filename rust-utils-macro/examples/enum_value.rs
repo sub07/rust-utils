@@ -1,6 +1,6 @@
 use crate::Direction::{Down, Left, Right, Up};
 use rust_utils_macro::EnumValue;
-use std::env::var;
+
 use TestEnum2::Var1;
 
 use crate::TestEnum2::{Var2, Var3, Var4};

@@ -1,5 +1,5 @@
-use std::fmt::Display;
 use rust_utils_macro::New;
+use std::fmt::Display;
 
 #[derive(New, Debug)]
 pub struct GenericsWithBound<'a, T: Display, E: Default, const SIZE: usize> {
@@ -9,7 +9,6 @@ pub struct GenericsWithBound<'a, T: Display, E: Default, const SIZE: usize> {
     _r: &'a u8,
     _a: [u8; SIZE],
 }
-
 
 fn main() {
     // let test = Test::new(Rc::new(RefCell::new(S)), 5, 6,);

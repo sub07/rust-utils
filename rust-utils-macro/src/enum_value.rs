@@ -1,8 +1,8 @@
 use proc_macro2::Literal;
 use syn::parse::{Parse, ParseStream};
 use syn::punctuated::Punctuated;
-use syn::token::Token;
-use syn::{parenthesized, token, Ident, Token, Type, TypePath};
+
+use syn::{parenthesized, token, Ident, Token, Type};
 
 pub fn get_nb_field(attributes_content: &[FieldAttributes]) -> usize {
     let values_length = attributes_content

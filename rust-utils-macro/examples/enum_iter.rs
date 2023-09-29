@@ -1,4 +1,4 @@
-use rust_utils_macro::{EnumIter};
+use rust_utils_macro::EnumIter;
 
 #[derive(EnumIter, Debug)]
 pub enum TestEnum2 {
