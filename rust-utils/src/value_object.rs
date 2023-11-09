@@ -43,6 +43,12 @@ macro_rules! define_value_object {
     };
 }
 
+pub enum Bound {
+    Lower,
+    In,
+    Upper,
+}
+
 #[macro_export]
 macro_rules! define_bounded_value_object {
     ($vis:vis $name:ident, $ty:ty, $default:expr, $min:literal, $max:literal) => {
@@ -75,6 +81,15 @@ macro_rules! define_bounded_value_object {
 
             pub const fn is_valid(value: $ty) -> bool {
                 value >= $name::MIN && value < $name::MAX
+            }
+
+            pub fn check(value: $ty) -> $crate::value_object::Bound {
+                use std::cmp::Ordering::*;
+                match (value.cmp(&$name::MIN), value.cmp(&$name::MAX)) {
+                    (Greater, Less) | (Equal, Less) | (Equal, Equal)  => $crate::value_object::Bound::In,
+                    (Less, _) => $crate::value_object::Bound::Lower,
+                    (_, Greater) | (Greater, Equal) => $crate::value_object::Bound::Upper,
+                }
             }
         }
 
