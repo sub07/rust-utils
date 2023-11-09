@@ -93,3 +93,14 @@ macro_rules! define_bounded_value_object {
         }
     };
 }
+
+#[macro_export]
+macro_rules! generate_bounded_value_object_consts {
+    ($value_object_ty:ident, $($ident:ident => $value:literal,)+) => {
+        impl $value_object_ty {
+            $(
+                pub const $ident: $value_object_ty = $value_object_ty::new_unchecked($value);
+            )+
+        }
+    };
+}
