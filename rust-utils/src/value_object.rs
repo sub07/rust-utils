@@ -42,3 +42,55 @@ macro_rules! define_value_object {
         }
     };
 }
+
+#[cfg(feature = "nightly")]
+pub mod nightly {
+    #[macro_export]
+    macro_rules! define_bounded_value_object {
+        ($vis:vis $name:ident, $ty:ty, $default:expr, $min:literal, $max:literal) => {
+            #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+            $vis struct $name($ty);
+
+            impl $name {
+                pub const DEFAULT: $name = $name::new_unchecked($default);
+
+                pub const fn value(&self) -> $ty {
+                    self.0
+                }
+
+                pub const fn new(value: $ty) -> Option<$name> {
+                    if $name::is_valid(value) {
+                        Some($name(value))
+                    } else {
+                        None
+                    }
+                }
+
+                pub const fn new_unchecked(value: $ty) -> $name {
+                    match $name::new(value) {
+                        Some(x) => x,
+                        None => panic!("Invalid value"),
+                    }
+                }
+
+                pub const fn is_valid(value: $ty) -> bool {
+                    value >= $min && value < $max
+                }
+            }
+
+            impl Default for $name {
+                fn default() -> Self {
+                    $name::new_unchecked($default)
+                }
+            }
+
+            impl std::ops::Deref for $name {
+                type Target = $ty;
+
+                fn deref(&self) -> &Self::Target {
+                    &self.0
+                }
+            }
+        };
+    }
+}

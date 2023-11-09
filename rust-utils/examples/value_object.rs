@@ -1,3 +1,7 @@
+#![cfg_attr(feature = "nightly", feature(const_fn_floating_point_arithmetic))]
+
+
+
 use rust_utils::define_value_object;
 
 fn main() {
@@ -14,4 +18,11 @@ fn main() {
 
     assert!(perci32_1.is_some());
     assert!(perci32_2.is_none());
+
+    #[cfg(feature = "nightly")]
+    {
+        rust_utils::define_bounded_value_object!(pub Num, f32, 0.0, -12.0, 34.0);
+
+        println!("{:?}", Num::DEFAULT);
+    }
 }
