@@ -51,6 +51,8 @@ macro_rules! define_bounded_value_object {
 
         impl $name {
             pub const DEFAULT: $name = $name::new_unchecked($default);
+            pub const MAX: $ty = $max;
+            pub const MIN: $ty = $min;
 
             pub const fn value(&self) -> $ty {
                 self.0
@@ -72,13 +74,13 @@ macro_rules! define_bounded_value_object {
             }
 
             pub const fn is_valid(value: $ty) -> bool {
-                value >= $min && value < $max
+                value >= $name::MIN && value < $name::MAX
             }
         }
 
         impl Default for $name {
             fn default() -> Self {
-                $name::new_unchecked($default)
+                $name::DEFAULT
             }
         }
 
