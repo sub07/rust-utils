@@ -51,7 +51,7 @@ pub enum Bound {
 
 #[macro_export]
 macro_rules! define_bounded_value_object {
-    ($vis:vis $name:ident, $ty:ty, $default:expr, $min:literal, $max:literal) => {
+    ($vis:vis $name:ident, $ty:ty, $default:expr, $min:expr, $max:expr) => {
         #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
         $vis struct $name($ty);
 
