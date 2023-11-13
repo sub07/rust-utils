@@ -15,7 +15,12 @@ fn main() {
     assert!(perci32_1.is_some());
     assert!(perci32_2.is_none());
 
-    rust_utils::define_bounded_value_object!(pub Num, i8, 0, -12, 34);
+    rust_utils::define_bounded_value_object! {
+        pub Num: i8,
+        default: 0,
+        min: -12,
+        max: 34,
+    };
 
     println!("{:?}", Num::DEFAULT);
     println!("{:?}", Num::check(-13));
