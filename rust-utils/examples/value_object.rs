@@ -1,4 +1,4 @@
-use rust_utils::{define_value_object, define_bounded_value_object};
+use rust_utils::{define_value_object, define_bounded_value_object, generate_bounded_value_object_consts, value_object::Bound};
 
 fn main() {
     define_value_object!(pub Percentage, f32, 0.0, |v| { (0.0..=1.0).contains(&v) });
@@ -22,10 +22,17 @@ fn main() {
         max: 34,
     };
 
-    println!("{:?}", Num::DEFAULT);
-    println!("{:?}", Num::check(-13));
-    println!("{:?}", Num::check(-12));
-    println!("{:?}", Num::check(24));
-    println!("{:?}", Num::check(34));
-    println!("{:?}", Num::check(35));
+    generate_bounded_value_object_consts! {
+        Num,
+        CONST_1 => 5i8,
+        CONST_2 => Num::MAX - 2,
+    }
+
+    assert_eq!(Bound::Lower, Num::check(-13));
+    assert_eq!(Bound::In, Num::check(-12));
+    assert_eq!(Bound::In, Num::check(24));
+    assert_eq!(Bound::In, Num::check(34));
+    assert_eq!(Bound::Upper, Num::check(35));
+
+    assert_eq!(Num::MAX - 2, *Num::CONST_2);
 }
