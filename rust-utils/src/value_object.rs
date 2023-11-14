@@ -86,7 +86,7 @@ macro_rules! define_bounded_value_object {
 
             pub fn check(value: $ty) -> $crate::value_object::Bound {
                 use std::cmp::Ordering::*;
-                match (value.cmp(&$name::MIN), value.cmp(&$name::MAX)) {
+                match (value.partial_cmp(&$name::MIN).unwrap(), value.partial_cmp(&$name::MAX).unwrap()) {
                     (Greater, Less) | (Equal, _) | (_, Equal) => $crate::value_object::Bound::In,
                     (Less, _) => $crate::value_object::Bound::Lower,
                     (_, Greater) => $crate::value_object::Bound::Upper,

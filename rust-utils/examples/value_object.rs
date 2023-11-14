@@ -1,4 +1,4 @@
-use rust_utils::define_value_object;
+use rust_utils::{define_value_object, define_bounded_value_object};
 
 fn main() {
     define_value_object!(pub Percentage, f32, 0.0, |v| { (0.0..=1.0).contains(&v) });
@@ -15,7 +15,7 @@ fn main() {
     assert!(perci32_1.is_some());
     assert!(perci32_2.is_none());
 
-    rust_utils::define_bounded_value_object! {
+    define_bounded_value_object! {
         pub Num: i8,
         default: 0,
         min: -12,
