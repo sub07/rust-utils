@@ -117,7 +117,7 @@ pub fn enum_value_derive(input: TokenStream) -> TokenStream {
             .map(|attr| {
                 (
                     attr.variant_ident.clone(),
-                    attr.attribute_content.values[field_index].neg_sign.clone(),
+                    attr.attribute_content.values[field_index].neg_sign,
                     attr.attribute_content.values[field_index].value.clone(),
                     attr.nb_unnamed_fields,
                 )

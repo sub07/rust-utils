@@ -1,4 +1,7 @@
-use rust_utils::{define_value_object, define_bounded_value_object, generate_bounded_value_object_consts, value_object::Bound};
+use rust_utils::{
+    define_bounded_value_object, define_value_object, generate_bounded_value_object_consts,
+    value_object::Bound,
+};
 
 fn main() {
     define_value_object!(pub Percentage, f32, 0.0, |v| { (0.0..=1.0).contains(&v) });

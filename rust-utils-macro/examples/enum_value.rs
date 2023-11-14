@@ -33,7 +33,7 @@ pub enum Direction {
 }
 
 fn main() {
-    for variant in vec![Var1(Test(5)), Var2, Var3, Var4] {
+    for variant in [Var1(Test(5)), Var2, Var3, Var4] {
         println!("{:?} {}", variant, variant.offset());
     }
 
