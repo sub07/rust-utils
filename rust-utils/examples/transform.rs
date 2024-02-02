@@ -1,4 +1,6 @@
-use rust_utils::into;
+use std::convert::Infallible;
+
+use rust_utils::{into, try_into};
 
 #[derive(Debug, Copy, Clone)]
 struct A;
@@ -32,4 +34,8 @@ fn main() {
 
     let _c = into!(a -> B -> C);
     let _c = into!(2i32 -> B -> C);
+
+    let _c = try_into!(A -> B -> C);
+    let _c = try_into!(a -> B -> C);
+    let _c = try_into!(2i32 -> B -> C);
 }
