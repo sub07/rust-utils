@@ -1,6 +1,10 @@
 [workspace]
 resolver = "2"
 members = [
-    "rust-utils",
+    "joy-collection-utils",
+    "joy-iter",
+    "wip-utils",
     "rust-utils-macro",
+    "joy-value-object",
+    "joy-vector",
 ]

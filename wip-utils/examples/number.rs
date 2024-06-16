@@ -1,4 +1,4 @@
-use rust_utils::number::EpsilonEq;
+use wip_utils::number::EpsilonEq;
 
 fn main() {
     let f1 = 0.002;

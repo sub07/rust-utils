@@ -45,9 +45,9 @@ macro_rules! define_value_object {
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum Bound {
+    Greater,
+    Between,
     Lower,
-    In,
-    Upper,
 }
 
 #[macro_export]
@@ -57,7 +57,7 @@ macro_rules! define_bounded_value_object {
         $vis struct $name($ty);
 
         impl $name {
-            pub const DEFAULT: $name = $name::new_unchecked($default);
+            pub const DEFAULT: $name = $name::new_unchecked_with_message($default, "Provided default is invalid");
             pub const MAX: $ty = $max;
             pub const MIN: $ty = $min;
 
@@ -74,9 +74,13 @@ macro_rules! define_bounded_value_object {
             }
 
             pub const fn new_unchecked(value: $ty) -> $name {
+                $name::new_unchecked_with_message(value, "Invalid value")
+            }
+
+            pub const fn new_unchecked_with_message(value: $ty, message: &'static str) -> $name {
                 match $name::new(value) {
                     Some(x) => x,
-                    None => panic!("Invalid value"),
+                    None => panic!("{}", message),
                 }
             }
 
@@ -84,12 +88,12 @@ macro_rules! define_bounded_value_object {
                 value >= $name::MIN && value <= $name::MAX
             }
 
-            pub fn check(value: $ty) -> $crate::value_object::Bound {
+            pub fn check(value: $ty) -> $crate::Bound {
                 use std::cmp::Ordering::*;
                 match (value.partial_cmp(&$name::MIN).unwrap(), value.partial_cmp(&$name::MAX).unwrap()) {
-                    (Greater, Less) | (Equal, _) | (_, Equal) => $crate::value_object::Bound::In,
-                    (Less, _) => $crate::value_object::Bound::Lower,
-                    (_, Greater) => $crate::value_object::Bound::Upper,
+                    (Greater, Less) | (Equal, _) | (_, Equal) => $crate::Bound::Between,
+                    (Less, _) => $crate::Bound::Lower,
+                    (_, Greater) => $crate::Bound::Greater,
                 }
             }
         }
@@ -119,4 +123,50 @@ macro_rules! generate_bounded_value_object_consts {
             )+
         }
     };
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    // Should be split up
+    #[test]
+    fn vo_test() {
+        define_value_object!(pub Percentage, f32, 0.0, |v| { (0.0..=1.0).contains(&v) });
+        define_value_object!(pub PercentageI32, i32, 0, |v| { (0..100).contains(&v) });
+        let perc1 = Percentage::new(5.0);
+        let perc2 = Percentage::new(0.2);
+
+        let perci32_1 = PercentageI32::new(54);
+        let perci32_2 = PercentageI32::new(-5);
+
+        assert!(perc1.is_none());
+        assert!(perc2.is_some());
+
+        assert_eq!(Some(0.2), perc2.map(|p| p.value()));
+
+        assert!(perci32_1.is_some());
+        assert!(perci32_2.is_none());
+
+        define_bounded_value_object! {
+            pub Num: i8,
+            default: 0,
+            min: -12,
+            max: 34,
+        };
+
+        generate_bounded_value_object_consts! {
+            Num,
+            CONST_1 => 5i8,
+            CONST_2 => Num::MAX - 2,
+        }
+
+        assert_eq!(Bound::Lower, Num::check(-13));
+        assert_eq!(Bound::Between, Num::check(-12));
+        assert_eq!(Bound::Between, Num::check(24));
+        assert_eq!(Bound::Between, Num::check(34));
+        assert_eq!(Bound::Greater, Num::check(35));
+
+        assert_eq!(Num::MAX - 2, *Num::CONST_2);
+    }
 }

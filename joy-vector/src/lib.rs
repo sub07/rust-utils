@@ -11,15 +11,16 @@ pub trait Number:
 {
 }
 
-macro_rules! impl_number_trait_for {
-    ($num_ty:tt $($other_num_ty:tt) *) => {
-        impl Number for $num_ty {}
-        impl_number_trait_for!($($other_num_ty) *);
-    };
-    () => {};
+impl<T> Number for T where
+    T: Copy
+        + PartialEq
+        + Add<Self, Output = Self>
+        + Sub<Self, Output = Self>
+        + Mul<Self, Output = Self>
+        + Div<Self, Output = Self>
+        + Default
+{
 }
-
-impl_number_trait_for!(i8 i16 i32 i64 i128 isize u8 u16 u32 u64 u128 usize f32 f64);
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vector<T, const SIZE: usize>([T; SIZE]);
@@ -289,7 +290,7 @@ impl_op_assign_vec_num!(/, DivAssign, div_assign);
 
 #[cfg(test)]
 mod vec_tests {
-    use crate::vector::Vector;
+    use super::*;
 
     #[test]
     fn from_slice() {
