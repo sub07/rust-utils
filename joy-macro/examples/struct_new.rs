@@ -1,5 +1,6 @@
-use old_macro::New;
 use std::fmt::Display;
+
+use joy_macro::New;
 
 #[derive(New, Debug)]
 pub struct GenericsWithBound<'a, T: Display, E: Default, const SIZE: usize> {
@@ -16,6 +17,6 @@ fn main() {
     // let gen = TGenerics::new(test, 8, 6);
     // dbg!(gen);
     let i = 5;
-    let g = GenericsWithBound::new(5, 7.0, 9u8, &i, [6; 5]);
+    let g = GenericsWithBound::new(5, 7.0f32, 9u8, &i, [6; 5]);
     dbg!(g);
 }
