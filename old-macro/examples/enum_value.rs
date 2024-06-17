@@ -1,5 +1,5 @@
 use crate::Direction::{Down, Left, Right, Up};
-use rust_utils_macro::EnumValue;
+use old_macro::EnumValue;
 
 use TestEnum2::Var1;
 

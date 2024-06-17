@@ -1,4 +1,4 @@
-use rust_utils_macro::New;
+use old_macro::New;
 use std::fmt::Display;
 
 #[derive(New, Debug)]

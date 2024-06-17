@@ -1,4 +1,4 @@
-use rust_utils_macro::EnumStr;
+use old_macro::EnumStr;
 
 #[derive(EnumStr)]
 pub enum TestEnum2 {

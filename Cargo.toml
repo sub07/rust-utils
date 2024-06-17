@@ -4,7 +4,7 @@ members = [
     "joy-collection-utils",
     "joy-iter",
     "wip-utils",
-    "rust-utils-macro",
+    "old-macro",
     "joy-value-object",
-    "joy-vector",
+    "joy-vector", "joy-macro",
 ]
