@@ -11,4 +11,5 @@ pub enum Test {
 fn main() {
     println!("{}", Test::SIZE);
     println!("{:?}", Test::VARIANTS);
+    println!("{:?}", Test::Var3.ordinal());
 }
