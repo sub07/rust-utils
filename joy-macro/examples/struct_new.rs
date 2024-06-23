@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 use std::fmt::Display;
 
 use joy_macro::New;
@@ -11,12 +13,23 @@ pub struct GenericsWithBound<'a, T: Display, E: Default, const SIZE: usize> {
     _a: [u8; SIZE],
 }
 
+struct A;
+
+#[derive(New)]
+struct B<'a, I>
+where
+    I: Iterator<Item = &'a A>,
+{
+    i: I,
+    a: i32,
+    b: i32,
+    c: i32,
+}
+
 fn main() {
-    // let test = Test::new(Rc::new(RefCell::new(S)), 5, 6,);
-    // dbg!(&test);
-    // let gen = TGenerics::new(test, 8, 6);
-    // dbg!(gen);
     let i = 5;
     let g = GenericsWithBound::new(5, 7.0f32, 9u8, &i, [6; 5]);
     dbg!(g);
+    let v = [A, A];
+    let _ = B::new(v.iter(), 45, 1, 9);
 }
