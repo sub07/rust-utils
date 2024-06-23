@@ -13,7 +13,7 @@ pub fn derive(input: DeriveInput) -> TokenStream {
     let where_clause = generics.where_clause.as_ref();
 
     quote! {
-        impl #generics Display for #ident #generic_types #where_clause {
+        impl #generics std::fmt::Display for #ident #generic_types #where_clause {
             fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
                 write!(f, "{:?}", self)
             }

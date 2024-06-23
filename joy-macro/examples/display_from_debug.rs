@@ -1,6 +1,5 @@
-use std::fmt::{Debug, Display};
-
 use joy_macro::DisplayFromDebug;
+use std::fmt::Debug;
 
 #[derive(Debug, DisplayFromDebug)]
 struct A(u32);
@@ -14,9 +13,17 @@ where
     i: I,
 }
 
+#[derive(Debug, DisplayFromDebug)]
+enum B<T: Debug> {
+    Var1,
+    Var2(T),
+}
+
 fn main() {
     let a = A(8);
 
     println!("{:?}", a);
     println!("{}", a);
+
+    println!("{}", B::<u32>::Var2(45));
 }
