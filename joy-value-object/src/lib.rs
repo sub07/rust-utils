@@ -77,6 +77,12 @@ macro_rules! mk_vo {
                 &self.0
             }
         }
+
+        impl From<$ty> for $name {
+            fn from(value: $ty) -> Self {
+                Num::new_unchecked(value)
+            }
+        }
     };
 }
 
@@ -95,7 +101,6 @@ macro_rules! mk_vo_consts {
 mod test {
     use super::*;
 
-    // Should be split up
     #[test]
     fn vo_test() {
         mk_vo! {
@@ -110,6 +115,12 @@ mod test {
             CONST_1 => 5i8,
             CONST_2 => Num::MAX_VALUE - 2,
         }
+
+        let num: Num = 8.into();
+        assert_eq!(Num(8), num);
+
+        assert_eq!(Num(5), Num::CONST_1);
+        assert_eq!(Num(Num::MAX_VALUE - 2), Num::CONST_2);
 
         let num = Num::new(5).unwrap();
         let num2 = num.saturating_add(9);
