@@ -80,7 +80,7 @@ macro_rules! mk_vo {
 
         impl From<$ty> for $name {
             fn from(value: $ty) -> Self {
-                Num::new_unchecked(value)
+                Self::new_unchecked(value)
             }
         }
     };
