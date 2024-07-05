@@ -1,9 +1,11 @@
 use joy_macro::DisplayFromDebug;
 use std::fmt::Debug;
 
+#[allow(dead_code)]
 #[derive(Debug, DisplayFromDebug)]
 struct A(u32);
 
+#[allow(dead_code)]
 #[derive(Debug, DisplayFromDebug)]
 struct S<T: Send + Debug, I>
 where
@@ -14,6 +16,7 @@ where
 }
 
 #[derive(Debug, DisplayFromDebug)]
+#[allow(dead_code)]
 enum B<T: Debug> {
     Var1,
     Var2(T),

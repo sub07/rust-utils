@@ -1,3 +1,5 @@
+#![feature(const_fn_floating_point_arithmetic)]
+
 #[derive(Debug, Eq, PartialEq)]
 pub enum Bound {
     Greater,
@@ -30,6 +32,18 @@ macro_rules! mk_vo {
                 }
             }
 
+            pub const fn new_clamped(value: $ty) -> $name {
+                let final_value = if value < Self::MIN_VALUE {
+                    Self::MIN_VALUE
+                } else if value > Self::MAX_VALUE {
+                    Self::MAX_VALUE
+                } else {
+                    value
+                };
+
+                Self::new_unchecked(final_value)
+            }
+
             pub const fn new_unchecked(value: $ty) -> $name {
                 $name::new_unchecked_with_message(value, "Invalid value")
             }
@@ -53,15 +67,6 @@ macro_rules! mk_vo {
                     (_, Greater) => $crate::Bound::Greater,
                 }
             }
-
-            pub fn saturating_add(&self, rhs: $ty) -> $name {
-                let new_value = self.value() + rhs;
-                match $name::check(new_value) {
-                    $crate::Bound::Greater => Self::MAX,
-                    $crate::Bound::Between => Self::new_unchecked(new_value),
-                    $crate::Bound::Lower => Self::MIN,
-                }
-            }
         }
 
         impl Default for $name {
@@ -83,6 +88,58 @@ macro_rules! mk_vo {
                 Self::new_unchecked(value)
             }
         }
+
+        impl std::ops::Add<$name> for $name {
+            type Output = $name;
+
+            fn add(self, rhs: $name) -> Self::Output {
+                let value = self.value() + rhs.value();
+                match $name::check(value) {
+                    Bound::Greater => Self::MAX,
+                    Bound::Between => Self::new_unchecked(value),
+                    Bound::Lower => Self::MIN,
+                }
+            }
+        }
+
+        impl std::ops::Sub<$name> for $name {
+            type Output = $name;
+
+            fn sub(self, rhs: $name) -> Self::Output {
+                let value = self.value() - rhs.value();
+                match $name::check(value) {
+                    Bound::Greater => Self::MAX,
+                    Bound::Between => Self::new_unchecked(value),
+                    Bound::Lower => Self::MIN,
+                }
+            }
+        }
+
+        impl std::ops::Mul<$name> for $name {
+            type Output = $name;
+
+            fn mul(self, rhs: $name) -> Self::Output {
+                let value = self.value() * rhs.value();
+                match $name::check(value) {
+                    Bound::Greater => Self::MAX,
+                    Bound::Between => Self::new_unchecked(value),
+                    Bound::Lower => Self::MIN,
+                }
+            }
+        }
+
+        impl std::ops::Div<$name> for $name {
+            type Output = $name;
+
+            fn div(self, rhs: $name) -> Self::Output {
+                let value = self.value() / rhs.value();
+                match $name::check(value) {
+                    Bound::Greater => Self::MAX,
+                    Bound::Between => Self::new_unchecked(value),
+                    Bound::Lower => Self::MIN,
+                }
+            }
+        }
     };
 }
 
@@ -101,43 +158,96 @@ macro_rules! mk_vo_consts {
 mod test {
     use super::*;
 
+    mk_vo! {
+        pub Num: i8,
+        default: 0,
+        min: -12,
+        max: 34,
+    }
+
+    mk_vo_consts! {
+        Num,
+        CONST_1 => 5i8,
+        CONST_2 => Num::MAX_VALUE - 2,
+    }
+
+    mk_vo! {
+        pub Numf32: f32,
+        default: 0.0,
+        min: -12.6,
+        max: 34.5,
+    }
+
+    mk_vo_consts! {
+        Numf32,
+        CONST_1 => 5.0,
+        CONST_2 => Numf32::MAX_VALUE - 2.0,
+    }
+
     #[test]
-    fn vo_test() {
-        mk_vo! {
-            pub Num: i8,
-            default: 0,
-            min: -12,
-            max: 34,
-        };
+    fn test_new_clamped() {
+        assert_eq!(Num::MIN, Num::new_clamped(-89));
+        assert_eq!(Num(18), Num::new_clamped(18));
+        assert_eq!(Num::MAX, Num::new_clamped(82));
+    }
 
-        mk_vo_consts! {
-            Num,
-            CONST_1 => 5i8,
-            CONST_2 => Num::MAX_VALUE - 2,
-        }
-
+    #[test]
+    fn test_from() {
         let num: Num = 8.into();
         assert_eq!(Num(8), num);
+    }
 
+    #[test]
+    fn test_const_values() {
         assert_eq!(Num(5), Num::CONST_1);
         assert_eq!(Num(Num::MAX_VALUE - 2), Num::CONST_2);
+    }
 
-        let num = Num::new(5).unwrap();
-        let num2 = num.saturating_add(9);
-        assert_eq!(14, num2.value());
-
-        let num3 = num2.saturating_add(100);
-        assert_eq!(Num::MAX, num3);
-
-        let num3 = num2.saturating_add(-100);
-        assert_eq!(Num::MIN, num3);
-
+    #[test]
+    fn test_bounds() {
         assert_eq!(Bound::Lower, Num::check(-13));
         assert_eq!(Bound::Between, Num::check(-12));
         assert_eq!(Bound::Between, Num::check(24));
         assert_eq!(Bound::Between, Num::check(34));
         assert_eq!(Bound::Greater, Num::check(35));
+    }
 
+    #[test]
+    fn test_deref() {
         assert_eq!(Num::MAX_VALUE - 2, *Num::CONST_2);
+    }
+
+    #[test]
+    fn test_add() {
+        assert_eq!(Num::MAX, Num::new_unchecked(30) + Num::new_unchecked(9));
+        assert_eq!(Num::MIN, Num::new_unchecked(-10) + Num::new_unchecked(-10));
+        assert_eq!(Num(5 + 9), Num::new_unchecked(5) + Num::new_unchecked(9));
+    }
+
+    #[test]
+    fn test_sub() {
+        assert_eq!(Num::MAX, Num::new_unchecked(30) - Num::new_unchecked(-9));
+        assert_eq!(Num::MIN, Num::new_unchecked(1) - Num::new_unchecked(30));
+        assert_eq!(Num(5 - 9), Num::new_unchecked(5) - Num::new_unchecked(9));
+    }
+
+    #[test]
+    fn test_mul() {
+        assert_eq!(Num::MAX, Num::new_unchecked(5) * Num::new_unchecked(9));
+        assert_eq!(Num::MIN, Num::new_unchecked(5) * Num::new_unchecked(-9));
+        assert_eq!(Num(3 * 3), Num::new_unchecked(3) * Num::new_unchecked(3));
+    }
+
+    #[test]
+    fn test_div() {
+        assert_eq!(
+            Numf32::MAX,
+            Numf32::new_unchecked(5.0) / Numf32::new_unchecked(0.01)
+        );
+        assert_eq!(
+            Numf32::MIN,
+            Numf32::new_unchecked(-9.0) / Numf32::new_unchecked(0.01)
+        );
+        assert_eq!(Num(9 / 3), Num::new_unchecked(9) / Num::new_unchecked(3));
     }
 }
