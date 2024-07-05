@@ -93,12 +93,15 @@ macro_rules! mk_vo {
             type Output = $name;
 
             fn add(self, rhs: $name) -> Self::Output {
-                let value = self.value() + rhs.value();
-                match $name::check(value) {
-                    Bound::Greater => Self::MAX,
-                    Bound::Between => Self::new_unchecked(value),
-                    Bound::Lower => Self::MIN,
-                }
+                Self::new_clamped(self.value() + rhs.value())
+            }
+        }
+
+        impl std::ops::Add<$ty> for $name {
+            type Output = $name;
+
+            fn add(self, rhs: $ty) -> Self::Output {
+                Self::new_clamped(self.value() + rhs)
             }
         }
 
@@ -106,12 +109,15 @@ macro_rules! mk_vo {
             type Output = $name;
 
             fn sub(self, rhs: $name) -> Self::Output {
-                let value = self.value() - rhs.value();
-                match $name::check(value) {
-                    Bound::Greater => Self::MAX,
-                    Bound::Between => Self::new_unchecked(value),
-                    Bound::Lower => Self::MIN,
-                }
+                Self::new_clamped(self.value() - rhs.value())
+            }
+        }
+
+        impl std::ops::Sub<$ty> for $name {
+            type Output = $name;
+
+            fn sub(self, rhs: $ty) -> Self::Output {
+                Self::new_clamped(self.value() - rhs)
             }
         }
 
@@ -119,12 +125,15 @@ macro_rules! mk_vo {
             type Output = $name;
 
             fn mul(self, rhs: $name) -> Self::Output {
-                let value = self.value() * rhs.value();
-                match $name::check(value) {
-                    Bound::Greater => Self::MAX,
-                    Bound::Between => Self::new_unchecked(value),
-                    Bound::Lower => Self::MIN,
-                }
+                Self::new_clamped(self.value() * rhs.value())
+            }
+        }
+
+        impl std::ops::Mul<$ty> for $name {
+            type Output = $name;
+
+            fn mul(self, rhs: $ty) -> Self::Output {
+                Self::new_clamped(self.value() * rhs)
             }
         }
 
@@ -132,12 +141,15 @@ macro_rules! mk_vo {
             type Output = $name;
 
             fn div(self, rhs: $name) -> Self::Output {
-                let value = self.value() / rhs.value();
-                match $name::check(value) {
-                    Bound::Greater => Self::MAX,
-                    Bound::Between => Self::new_unchecked(value),
-                    Bound::Lower => Self::MIN,
-                }
+                Self::new_clamped(self.value() / rhs.value())
+            }
+        }
+
+        impl std::ops::Div<$ty> for $name {
+            type Output = $name;
+
+            fn div(self, rhs: $ty) -> Self::Output {
+                Self::new_clamped(self.value() / rhs)
             }
         }
     };
@@ -249,5 +261,33 @@ mod test {
             Numf32::new_unchecked(-9.0) / Numf32::new_unchecked(0.01)
         );
         assert_eq!(Num(9 / 3), Num::new_unchecked(9) / Num::new_unchecked(3));
+    }
+
+    #[test]
+    fn test_add_value() {
+        assert_eq!(Num::MAX, Num::new_unchecked(30) + 9);
+        assert_eq!(Num::MIN, Num::new_unchecked(-10) + -10);
+        assert_eq!(Num(5 + 9), Num::new_unchecked(5) + 9);
+    }
+
+    #[test]
+    fn test_sub_value() {
+        assert_eq!(Num::MAX, Num::new_unchecked(30) - -9);
+        assert_eq!(Num::MIN, Num::new_unchecked(1) - 30);
+        assert_eq!(Num(5 - 9), Num::new_unchecked(5) - 9);
+    }
+
+    #[test]
+    fn test_mul_value() {
+        assert_eq!(Num::MAX, Num::new_unchecked(5) * 9);
+        assert_eq!(Num::MIN, Num::new_unchecked(5) * -9);
+        assert_eq!(Num(3 * 3), Num::new_unchecked(3) * 3);
+    }
+
+    #[test]
+    fn test_div_value() {
+        assert_eq!(Numf32::MAX, Numf32::new_unchecked(5.0) / 0.01);
+        assert_eq!(Numf32::MIN, Numf32::new_unchecked(-9.0) / 0.01);
+        assert_eq!(Num(9 / 3), Num::new_unchecked(9) / 3);
     }
 }
