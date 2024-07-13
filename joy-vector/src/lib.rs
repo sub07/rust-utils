@@ -114,6 +114,12 @@ impl<T: Number, const SIZE: usize> From<T> for Vector<T, SIZE> {
     }
 }
 
+impl<T, const SIZE: usize> From<Vector<T, SIZE>> for [T; SIZE] {
+    fn from(val: Vector<T, SIZE>) -> Self {
+        val.0
+    }
+}
+
 impl<T, const SIZE: usize> Index<usize> for Vector<T, SIZE> {
     type Output = T;
 
@@ -312,6 +318,15 @@ mod vec_tests {
         for x in v.iter() {
             assert_eq!(*x, initial_num);
         }
+    }
+
+    #[test]
+    fn test_destruct() {
+        let mut vec = vector![10, 5, 6];
+        let [_, _, _] = vec.into();
+        let [_, _, _] = vec.as_slice();
+        let [_, _, _] = vec.as_slice_mut();
+        let Vector([_, _, _]) = vec;
     }
 
     #[test]
