@@ -35,6 +35,9 @@ impl<T, const SIZE: usize> Vector<T, SIZE> {
     pub const fn size(&self) -> usize {
         SIZE
     }
+    pub fn into_inner(self) -> [T; SIZE] {
+        self.0
+    }
 }
 
 impl<T: Number, const SIZE: usize> Default for Vector<T, SIZE> {
