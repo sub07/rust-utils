@@ -93,7 +93,7 @@ impl<T: Number> Vector<T, 3> {
 
 #[macro_export]
 macro_rules! vector {
-    [$($val:literal),+] => { Vector::from([$($val),+]) };
+    [$($val:expr),+] => { Vector::from([$($val),+]) };
 }
 
 impl<T, const SIZE: usize> From<[T; SIZE]> for Vector<T, SIZE> {
@@ -327,6 +327,17 @@ mod vec_tests {
         let [_, _, _] = vec.as_slice();
         let [_, _, _] = vec.as_slice_mut();
         let Vector([_, _, _]) = vec;
+    }
+
+    #[test]
+    fn test_vector_macro() {
+        let e1 = 5;
+        let e2 = 6;
+        let e3 = 7;
+
+        let v = vector![e1, e2, e3];
+
+        assert_eq!(&[e1, e2, e3], v.as_slice());
     }
 
     #[test]
