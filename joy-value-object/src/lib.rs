@@ -9,8 +9,8 @@ pub enum Bound {
 
 #[macro_export]
 macro_rules! mk_vo {
-    ($vis:vis $name:ident: $ty:ty, default: $default:expr, min: $min:expr, max: $max:expr $(, additionnal_derive: $additionnal_derive:tt)? $(,)?) => {
-        #[derive(Debug, Clone, Copy, PartialEq, PartialOrd $(, $additionnal_derive)?)]
+    ($vis:vis $name:ident: $ty:ty, default: $default:expr, min: $min:expr, max: $max:expr $(, additional_derive: $($additional_derive:ident),+)? $(,)?) => {
+        #[derive(Debug, Clone, Copy, PartialEq, PartialOrd $(, $($additional_derive),+)?)]
         $vis struct $name($ty);
 
         impl $name {
@@ -175,7 +175,7 @@ mod test {
         default: 0,
         min: -12,
         max: 34,
-        additionnal_derive: Hash,
+        additional_derive: Hash,
     }
 
     mk_vo_consts! {
