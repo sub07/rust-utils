@@ -93,7 +93,7 @@ impl<T: Number> Vector<T, 3> {
 
 #[macro_export]
 macro_rules! vector {
-    [$($val:expr),+] => { Vector::from([$($val),+]) };
+    [$($val:expr),+] => { $crate::Vector::from([$($val),+]) };
 }
 
 impl<T, const SIZE: usize> From<[T; SIZE]> for Vector<T, SIZE> {
