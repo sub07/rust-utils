@@ -23,7 +23,7 @@ impl<T> Number for T where
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Vector<T, const SIZE: usize>([T; SIZE]);
+pub struct Vector<T, const SIZE: usize>(pub [T; SIZE]);
 
 impl<T, const SIZE: usize> Vector<T, SIZE> {
     pub const fn as_slice(&self) -> &[T; SIZE] {
@@ -34,9 +34,6 @@ impl<T, const SIZE: usize> Vector<T, SIZE> {
     }
     pub const fn size(&self) -> usize {
         SIZE
-    }
-    pub fn into_inner(self) -> [T; SIZE] {
-        self.0
     }
 }
 
