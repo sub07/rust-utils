@@ -5,16 +5,6 @@ use std::fmt::Debug;
 #[derive(Debug, DisplayFromDebug)]
 struct A(u32);
 
-#[allow(dead_code)]
-#[derive(Debug, DisplayFromDebug)]
-struct S<T: Send + Debug, I>
-where
-    I: Iterator<Item = u8> + Debug,
-{
-    t: T,
-    i: I,
-}
-
 #[derive(Debug, DisplayFromDebug)]
 #[allow(dead_code)]
 enum B<T: Debug> {
@@ -22,11 +12,20 @@ enum B<T: Debug> {
     Var2(T),
 }
 
+#[allow(dead_code)]
+#[derive(Debug, DisplayFromDebug)]
+struct C<T: Send + Debug, I>
+where
+    I: Iterator<Item = u8> + Debug,
+{
+    t: T,
+    i: I,
+}
+
 fn main() {
     let a = A(8);
+    assert_eq!(format!("{a}"), format!("{a:?}"));
 
-    println!("{:?}", a);
-    println!("{}", a);
-
-    println!("{}", B::<u32>::Var2(45));
+    let b = B::<u32>::Var2(45);
+    assert_eq!(format!("{b}"), format!("{b:?}"));
 }

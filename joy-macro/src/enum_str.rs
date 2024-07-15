@@ -4,17 +4,16 @@ use syn::{DataEnum, Ident};
 
 pub fn derive(enum_ident: Ident, enum_data: DataEnum) -> TokenStream {
     let variants = enum_data.variants.iter().collect::<Vec<_>>();
-    let variant_count = variants.len();
-    let ordinals = 0..variant_count;
+    let variants_str = variants
+        .iter()
+        .map(|v| v.ident.to_string())
+        .collect::<Vec<_>>();
     quote! {
         impl #enum_ident {
-            pub const COUNT: usize = #variant_count;
-            pub const VARIANTS: [#enum_ident; #variant_count] = [#(#enum_ident::#variants),*];
-
-            pub const fn ordinal(self) -> usize {
+            pub const fn as_str(self) -> &'static str {
                 match self {
                     #(
-                        #enum_ident::#variants => #ordinals
+                        #enum_ident::#variants => #variants_str
                     ),*
                 }
             }
