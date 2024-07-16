@@ -173,7 +173,7 @@ macro_rules! gen_op_vec_vec_ref {
         impl_op_vec_vec!($op, $trait_name, $trait_fn, &Vector<T, SIZE>, Vector<T, SIZE>);
         impl_op_vec_vec!($op, $trait_name, $trait_fn, Vector<T, SIZE>, &Vector<T, SIZE>);
         impl_op_vec_vec!($op, $trait_name, $trait_fn, &Vector<T, SIZE>, &Vector<T, SIZE>);
-    };
+     };
 }
 
 gen_op_vec_vec_ref!(+, Add, add);
@@ -258,6 +258,14 @@ macro_rules! impl_op_assign_vec_vec {
                 }
             }
         }
+        
+        impl<T: Number, const SIZE: usize> std::ops::$trait_name<$vec_ty> for &mut Vector<T, SIZE> {
+            fn $trait_fn(&mut self, rhs: $vec_ty) {
+                for (a, b) in self.as_slice_mut().iter_mut().zip(rhs.as_slice().iter()) {
+                    *a = *a $op *b;
+                }
+            }
+        }
     };
 }
 
@@ -280,6 +288,14 @@ gen_op_assign_vec_vec!(/, DivAssign, div_assign);
 macro_rules! impl_op_assign_vec_num {
     ($op:tt, $trait_name:ident, $trait_fn:ident) => {
         impl<T: Number, const SIZE: usize> std::ops::$trait_name<T> for Vector<T, SIZE> {
+            fn $trait_fn(&mut self, rhs: T) {
+                for val in self.as_slice_mut().iter_mut() {
+                    *val = *val $op rhs;
+                }
+            }
+        }
+
+        impl<T: Number, const SIZE: usize> std::ops::$trait_name<T> for &mut Vector<T, SIZE> {
             fn $trait_fn(&mut self, rhs: T) {
                 for val in self.as_slice_mut().iter_mut() {
                     *val = *val $op rhs;
@@ -509,5 +525,45 @@ mod vec_tests {
         assert_eq!(v, vector![4, 8, 16, 32]);
         v /= v2;
         assert_eq!(v, vector![2, 2, 4, 6]);
+    }
+
+    #[test]
+    fn add_assign_refmutvec_vec() {
+        let mut v = &mut vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(*v, vector![1, 2, 3, 4]);
+        v += v2;
+        assert_eq!(*v, vector![3, 5, 7, 9]);
+    }
+
+    #[test]
+    fn sub_assign_refmutvec_vec() {
+        let mut v = &mut vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(*v, vector![1, 2, 3, 4]);
+        v -= v2;
+        assert_eq!(*v, vector![-1, -1, -1, -1]);
+    }
+
+    #[test]
+    fn mul_assign_refmutvec_vec() {
+        let mut v = &mut vector![1, 2, 3, 4];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(*v, vector![1, 2, 3, 4]);
+        v *= v2;
+        assert_eq!(*v, vector![2, 6, 12, 20]);
+    }
+
+    #[test]
+    fn div_assign_refmutvec_vec() {
+        let mut v = &mut vector![4, 8, 16, 32];
+        let v2 = vector![2, 3, 4, 5];
+
+        assert_eq!(*v, vector![4, 8, 16, 32]);
+        v /= v2;
+        assert_eq!(*v, vector![2, 2, 4, 6]);
     }
 }
