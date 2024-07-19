@@ -26,6 +26,8 @@ impl<T> Number for T where
 pub struct Vector<T, const SIZE: usize>(pub [T; SIZE]);
 
 impl<T, const SIZE: usize> Vector<T, SIZE> {
+    const EMPTY: Vector<T, 0> = Vector([]);
+
     pub const fn as_slice(&self) -> &[T; SIZE] {
         &self.0
     }
@@ -34,6 +36,17 @@ impl<T, const SIZE: usize> Vector<T, SIZE> {
     }
     pub const fn size(&self) -> usize {
         SIZE
+    }
+}
+
+#[cfg(feature = "math")]
+impl<const SIZE: usize> Vector<f32, SIZE> {
+    pub fn norm2(&self) -> f32 {
+        self.0.iter().map(|x| x * x).sum()
+    }
+
+    pub fn norm(&self) -> f32 {
+        self.norm2().sqrt()
     }
 }
 
@@ -258,7 +271,7 @@ macro_rules! impl_op_assign_vec_vec {
                 }
             }
         }
-        
+
         impl<T: Number, const SIZE: usize> std::ops::$trait_name<$vec_ty> for &mut Vector<T, SIZE> {
             fn $trait_fn(&mut self, rhs: $vec_ty) {
                 for (a, b) in self.as_slice_mut().iter_mut().zip(rhs.as_slice().iter()) {
@@ -565,5 +578,28 @@ mod vec_tests {
         assert_eq!(*v, vector![4, 8, 16, 32]);
         v /= v2;
         assert_eq!(*v, vector![2, 2, 4, 6]);
+    }
+}
+
+#[cfg(all(test, feature = "math"))]
+pub mod math_feature_tests {
+    use crate::Vector;
+
+    #[test]
+    fn norm_high_dimension() {
+        let v = vector!(5.0, 6.0, 8.0, 3.0);
+        assert_eq!(134.0, v.norm2());
+        approx::assert_relative_eq!(11.57, v.norm(), epsilon = 0.01);
+    }
+
+    #[test]
+    fn norm_eq_0() {
+        let v: Vector<f32, 0> = Vector::<f32, 0>::EMPTY;
+        assert_eq!(0.0, v.norm());
+        assert_eq!(0.0, v.norm2());
+
+        let v = vector!(0.0, 0.0, 0.0, 0.0);
+        assert_eq!(0.0, v.norm());
+        assert_eq!(0.0, v.norm2());
     }
 }
