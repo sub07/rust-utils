@@ -6,5 +6,7 @@ members = [
     # "wip-utils",
     # "old-macro",
     "joy-value-object",
-    "joy-vector", "joy-macro",
+    "joy-vector",
+    "joy-macro",
+    "joy-impl-ignore",
 ]

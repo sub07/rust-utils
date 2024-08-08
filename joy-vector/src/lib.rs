@@ -579,6 +579,13 @@ mod vec_tests {
         v /= v2;
         assert_eq!(*v, vector![2, 2, 4, 6]);
     }
+
+    #[test]
+    fn test_empty_is_empty() {
+        let empty = Vector::<i32, 0>::EMPTY;
+
+        assert_eq!(0, empty.len());
+    }
 }
 
 #[cfg(all(test, feature = "math"))]
