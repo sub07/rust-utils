@@ -1,5 +1,5 @@
-mod debug;
-mod eq;
+pub mod debug;
+pub mod eq;
 
 #[macro_export]
 macro_rules! gen_common_ignore_impl {
