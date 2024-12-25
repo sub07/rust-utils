@@ -1,5 +1,3 @@
-#![feature(const_fn_floating_point_arithmetic)]
-
 #[derive(Debug, Eq, PartialEq)]
 pub enum Bound {
     Greater,
