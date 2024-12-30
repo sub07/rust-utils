@@ -9,4 +9,5 @@ members = [
     "joy-vector",
     "joy-macro",
     "joy-impl-ignore",
+    "joy-error",
 ]
