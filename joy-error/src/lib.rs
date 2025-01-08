@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use tracing::error;
+use log::error;
 
 pub trait OptionToResultExt<T, E> {
     fn unwrap_or_fallible<F>(self, f: F) -> Result<T, E>
