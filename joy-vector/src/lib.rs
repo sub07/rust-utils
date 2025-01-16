@@ -26,7 +26,7 @@ impl<T> Number for T where
 pub struct Vector<T, const SIZE: usize>(pub [T; SIZE]);
 
 impl<T, const SIZE: usize> Vector<T, SIZE> {
-    const EMPTY: Vector<T, 0> = Vector([]);
+    pub const EMPTY: Vector<T, 0> = Vector([]);
 
     pub const fn as_slice(&self) -> &[T; SIZE] {
         &self.0
