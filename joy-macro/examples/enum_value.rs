@@ -1,6 +1,6 @@
-use joy_macro::EnumValue;
+use joy_macro::{EnumIter, EnumValue};
 
-#[derive(EnumValue)]
+#[derive(EnumValue, EnumIter)]
 enum Test {
     #[value(x: u32 = 8, y: &'static str = "test1")]
     Var1,
@@ -13,13 +13,6 @@ enum Test {
 }
 
 fn main() {
-    dbg!(Test::Var1.x());
-    dbg!(Test::Var2.x());
-    dbg!(Test::Var3.x());
-    dbg!(Test::Var4.x());
-
-    dbg!(Test::Var1.y());
-    dbg!(Test::Var2.y());
-    dbg!(Test::Var3.y());
-    dbg!(Test::Var4.y());
+    dbg!(Test::VARIANTS.map(|v| v.x()));
+    dbg!(Test::VARIANTS.map(|v| v.y()));
 }
