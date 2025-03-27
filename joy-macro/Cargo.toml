@@ -1,6 +1,6 @@
 [package]
 name = "joy-macro"
-version = "0.2.4"
+version = "0.3.4"
 edition = "2021"
 
 [lib]
@@ -9,4 +9,5 @@ proc-macro = true
 [dependencies]
 quote = "1"
 proc-macro2 = "1"
-syn = { version = "2" }
+syn = { version = "2", features = ["extra-traits"] }
+itertools = "0"

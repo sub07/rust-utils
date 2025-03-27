@@ -49,6 +49,9 @@ mod test {
         let s = TestDebugPartialEq(5, "test", PartialEqImplIgnore(DebugImplIgnore(5)));
         let diff_s = TestDebugPartialEq(5, "test", PartialEqImplIgnore(DebugImplIgnore(6)));
         assert_eq!(s, diff_s);
-        assert_eq!(r#"TestDebugPartialEq(5, "test", **ignored**)"#, format!("{s:?}"));
+        assert_eq!(
+            r#"TestDebugPartialEq(5, "test", **ignored**)"#,
+            format!("{s:?}")
+        );
     }
 }
