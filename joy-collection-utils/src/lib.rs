@@ -6,7 +6,7 @@ macro_rules! hash_map_of {
     ($($key:expr => $value:expr),* $(,)?) => {
         std::collections::HashMap::from([
             $(
-                ($key, $value),
+                ($key.into(), $value.into()),
             )*
         ])
     };
@@ -28,7 +28,7 @@ mod test {
             }
         }
 
-        let hm = hash_map_of! [
+        let hm: HashMap<i32, _> = hash_map_of! [
             8 => A::f(4),
             4 => A::f(8),
         ];
@@ -36,7 +36,7 @@ mod test {
         assert_eq!(Some(&A(4)), hm.get(&8));
         assert_eq!(Some(&A(8)), hm.get(&4));
 
-        let hm = hash_map_of! [
+        let hm: HashMap<i32, _> = hash_map_of! [
             8 => A::f(4),
         ];
         assert_eq!(Some(&A(4)), hm.get(&8));
@@ -45,7 +45,7 @@ mod test {
 
         assert_eq!(0, hm.len());
 
-        let hm = hash_map_of! [
+        let hm: HashMap<&'static str, HashMap<A, Vec<i32>>> = hash_map_of! [
             "test1" => hash_map_of! [
                 A::f(9) => vec![4, 5, 3],
                 A::f(7) => vec![4, 5, 3],
