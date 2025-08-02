@@ -1,6 +1,15 @@
 use std::{convert::Infallible, fmt::Display};
 
+#[cfg(feature = "tracing-crate")]
+use tracing::error;
+
+#[cfg(feature = "log-crate")]
 use log::error;
+
+#[cfg(all(not(feature = "log-crate"), not(feature = "tracing-crate")))]
+macro_rules! error {
+    ($t:tt) => {{}};
+}
 
 #[easy_ext::ext(ResultLogExt)]
 #[allow(
@@ -10,7 +19,11 @@ use log::error;
 pub impl<T, E: Display> Result<T, E> {
     #[inline]
     fn log_err(self) -> Self {
-        self.inspect_err(|e| error!("{e}"))
+        if cfg!(any(feature = "log-crate", feature = "tracing-crate")) {
+            self.inspect_err(|e| error!("{e}"))
+        } else {
+            self
+        }
     }
 
     #[inline]
