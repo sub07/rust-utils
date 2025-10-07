@@ -35,19 +35,16 @@ pub impl<T, E: Display> Result<T, E> {
     fn log_ok(self) -> Option<T> {
         self.log_err().ok()
     }
+
+    #[cfg(feature = "anyhow-crate")]
+    fn into_anyhow(self) -> anyhow::Result<T> {
+        self.map_err(|e| anyhow::Error::msg(e.to_string()))
+    }
 }
 
 #[easy_ext::ext(ResultInfallibleExt)]
 pub impl<T> Result<T, Infallible> {
     fn unwrap_infallible(self) -> T {
         self.expect("Infallible")
-    }
-}
-
-#[easy_ext::ext(ResultExt)]
-pub impl<T, E> Result<T, E> {
-    #[cfg(feature = "anyhow-crate")]
-    fn into_anyhow(self) -> anyhow::Result<T> {
-        self.map_err(|e| anyhow::Error::msg(e.to_string()))
     }
 }
