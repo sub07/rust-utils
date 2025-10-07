@@ -6,5 +6,10 @@
     "label": "run",
     "command": "cargo",
     "args": ["run", "--example", "${ZED_STEM}"]
+  },
+  {
+    "label": "run b",
+    "command": "cargo",
+    "args": ["build"]
   }
 ]

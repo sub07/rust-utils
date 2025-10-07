@@ -43,3 +43,11 @@ pub impl<T> Result<T, Infallible> {
         self.expect("Infallible")
     }
 }
+
+#[easy_ext::ext(ResultExt)]
+pub impl<T, E> Result<T, E> {
+    #[cfg(feature = "anyhow-crate")]
+    fn into_anyhow(self) -> anyhow::Result<T> {
+        self.map_err(|e| anyhow::Error::msg(e.to_string()))
+    }
+}
