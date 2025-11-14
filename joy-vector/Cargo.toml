@@ -1,12 +1,9 @@
 [package]
 name = "joy-vector"
-version = "0.1.9"
+version = "0.2.0"
 edition = "2021"
 
 [dependencies]
 
 [dev-dependencies]
 approx = "0.5"
-
-[features]
-math = []
