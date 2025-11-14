@@ -598,6 +598,14 @@ macro_rules! gen_vector {
                 self.0[1]
             }
 
+            pub fn width(&self) -> $t {
+                self.0[0]
+            }
+
+            pub fn height(&self) -> $t {
+                self.0[1]
+            }
+
             pub fn set_x(&mut self, value: $t) {
                 self.0[0] = value;
             }
