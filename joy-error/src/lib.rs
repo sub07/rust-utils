@@ -3,11 +3,6 @@ use std::convert::Infallible;
 #[cfg(any(feature = "log-crate", feature = "tracing-crate"))]
 pub mod log;
 
-#[cfg(all(not(feature = "log-crate"), not(feature = "tracing-crate")))]
-macro_rules! error {
-    ($t:tt) => {{}};
-}
-
 #[cfg(feature = "anyhow-crate")]
 #[easy_ext::ext(AnyhowResultLogExt)]
 #[allow(
@@ -25,4 +20,9 @@ pub impl<T> Result<T, Infallible> {
     fn unwrap_infallible(self) -> T {
         self.expect("Infallible")
     }
+}
+
+#[easy_ext::ext(ResultUtilityExt)]
+pub impl<T, E> Result<T, E> {
+    fn discard(self) {}
 }
