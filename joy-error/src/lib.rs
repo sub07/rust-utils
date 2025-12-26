@@ -2,6 +2,7 @@ use std::convert::Infallible;
 
 #[cfg(any(feature = "log-crate", feature = "tracing-crate"))]
 pub mod log;
+pub mod option;
 
 #[cfg(feature = "anyhow-crate")]
 #[easy_ext::ext(AnyhowResultLogExt)]
